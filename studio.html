@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Open the SnapBooth studio to take photos, make strips, and save your favorite moments." />
+  <meta name="theme-color" content="#111018" />
+  <meta name="color-scheme" content="dark light" />
+  <meta property="og:title" content="SnapBooth Studio" />
+  <meta property="og:description" content="Capture a moment with filters, stickers, and photo strips." />
+  <title>SnapBooth Studio — Make a moment of it</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261014.9" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20261015.20" />
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div id="preloader" aria-label="Loading SnapBooth" role="status">
+  <div class="preloader-inner">
+    <div class="preloader-logo">📸</div>
+    <div class="preloader-text">SnapBooth</div>
+    <div class="preloader-bar"><div class="preloader-fill"></div></div>
+  </div>
+</div>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<nav id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="./index.html" class="nav-logo" aria-label="SnapBooth home">📸 <span>SnapBooth</span></a>
+    <ul class="nav-links" role="list">
+      <li><a href="./index.html" class="nav-link">Home</a></li>
+      <li><a href="#booth" class="nav-link active" data-section="booth" data-action="open-booth">Studio</a></li>
+      <li><a href="./gallery.html" class="nav-link">Gallery</a></li>
+      <li><a href="#about" class="nav-link" data-section="about">About</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">🌙</button>
+      <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">🔊</button>
+      <button class="nav-cta" data-action="open-booth" aria-label="Open photobooth">Start booth</button>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">☰</button>
+  </div>
+  <div class="nav-mobile-menu" id="nav-mobile-menu" aria-hidden="true">
+    <a href="./index.html" class="mob-link">🏠 Home</a>
+    <a href="#booth" class="mob-link" data-action="open-booth">📸 Studio</a>
+    <a href="./gallery.html" class="mob-link">🖼️ Gallery</a>
+    <a href="#about" class="mob-link">ℹ️ About</a>
+  </div>
+</nav>
+
+<main id="main-content" tabindex="-1">
+  <section id="booth" class="section booth-section" aria-label="Photobooth">
+    <div id="camera-error" class="camera-error hidden" role="alert">
+      <div class="camera-error-inner">
+        <div class="error-icon">📵</div>
+        <h2>Camera access needed</h2>
+        <p id="camera-error-msg">Please allow camera access to use the photobooth.</p>
+        <button class="btn-primary" data-action="retry-camera" aria-label="Retry camera access">🔄 Try again</button>
+      </div>
+    </div>
+
+    <div class="booth-layout" id="booth-layout">
+      <aside class="booth-sidebar left-panel" aria-label="Booth controls">
+        <div class="panel-section">
+          <h3 class="panel-title">📷 Mode</h3>
+          <div class="mode-grid" role="group" aria-label="Capture mode">
+            <button class="mode-btn active" data-mode="single" aria-pressed="true">1️⃣ Single</button>
+            <button class="mode-btn" data-mode="strip2" aria-pressed="false">2️⃣ Strip ×2</button>
+            <button class="mode-btn" data-mode="strip4" aria-pressed="false">4️⃣ Strip ×4</button>
+            <button class="mode-btn" data-mode="gif" aria-pressed="false">🎬 GIF</button>
+            <button class="mode-btn" data-mode="boomerang" aria-pressed="false">🔁 Boomerang</button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">⏱ Countdown</h3>
+          <div class="countdown-group" role="group" aria-label="Countdown duration">
+            <button class="cd-btn active" data-cd="3" aria-pressed="true">3s</button>
+            <button class="cd-btn" data-cd="5" aria-pressed="false">5s</button>
+            <button class="cd-btn" data-cd="10" aria-pressed="false">10s</button>
+          </div>
+        </div>
+        <div class="panel-section" id="camera-switch-section">
+          <h3 class="panel-title">📱 Camera</h3>
+          <button class="icon-btn full" data-action="flip-camera" aria-label="Switch camera">🔄 Flip camera</button>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">🎉 Theme</h3>
+          <select id="theme-select" class="styled-select" aria-label="Event theme">
+            <option value="none">No theme</option>
+            <option value="wedding">💍 Wedding</option>
+            <option value="birthday">🎂 Birthday</option>
+            <option value="graduation">🎓 Graduation</option>
+            <option value="corporate">💼 Corporate</option>
+          </select>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">🖼 Color wash</h3>
+          <div class="bg-grid" role="group" aria-label="Camera color wash">
+            <button class="bg-btn active" data-bg="none" aria-pressed="true">None</button>
+            <button class="bg-btn" data-bg="galaxy" aria-pressed="false">🌌</button>
+            <button class="bg-btn" data-bg="beach" aria-pressed="false">🏖️</button>
+            <button class="bg-btn" data-bg="city" aria-pressed="false">🏙️</button>
+            <button class="bg-btn" data-bg="forest" aria-pressed="false">🌲</button>
+            <button class="bg-btn" data-bg="studio" aria-pressed="false">🎨</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="booth-center" aria-label="Camera view">
+        <div class="camera-wrap" id="camera-wrap" role="img" aria-label="Live camera feed">
+          <div class="camera-loading" id="camera-loading" aria-live="polite"><div class="spinner" aria-hidden="true"></div><p>Starting camera…</p></div>
+          <video id="video" autoplay playsinline muted aria-label="Camera preview"></video>
+          <canvas id="filter-canvas" aria-hidden="true"></canvas>
+          <div class="frame-overlay" id="frame-overlay" aria-hidden="true"></div>
+          <div class="sticker-layer" id="sticker-layer" aria-label="Stickers"></div>
+          <div class="countdown-display" id="countdown-display" aria-live="assertive" aria-atomic="true"></div>
+          <div class="flash-overlay" id="flash-overlay" aria-hidden="true"></div>
+          <div class="theme-overlay" id="theme-overlay" aria-hidden="true"></div>
+        </div>
+        <div class="strip-preview" id="strip-preview" aria-label="Captured photos strip" role="list"></div>
+        <div class="capture-controls" aria-label="Capture controls">
+          <button class="icon-btn" id="fullscreen-btn" data-action="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen (F)">⛶</button>
+          <button class="capture-btn" id="capture-btn" data-action="capture" aria-label="Take photo" title="Capture (Space)"><span class="capture-ring"></span><span class="capture-dot"></span></button>
+        </div>
+        <div class="keyboard-hints" aria-hidden="true"><span>Space = Capture</span><span>R = Retake</span><span>F = Fullscreen</span><span>← → = Filter</span></div>
+      </div>
+
+      <aside class="booth-sidebar right-panel" aria-label="Filters and stickers">
+        <div class="panel-section">
+          <h3 class="panel-title">🎨 Filters</h3>
+          <div class="filter-list" id="filter-list" role="listbox" aria-label="Camera filters">
+            <button class="filter-btn active" data-filter="none" role="option" aria-selected="true"><div class="filter-preview fp-none"></div><span>Normal</span></button>
+            <button class="filter-btn" data-filter="vintage" role="option" aria-selected="false"><div class="filter-preview fp-vintage"></div><span>Vintage</span></button>
+            <button class="filter-btn" data-filter="bw" role="option" aria-selected="false"><div class="filter-preview fp-bw"></div><span>B&amp;W</span></button>
+            <button class="filter-btn" data-filter="sepia" role="option" aria-selected="false"><div class="filter-preview fp-sepia"></div><span>Sepia</span></button>
+            <button class="filter-btn" data-filter="neon" role="option" aria-selected="false"><div class="filter-preview fp-neon"></div><span>Neon</span></button>
+            <button class="filter-btn" data-filter="glow" role="option" aria-selected="false"><div class="filter-preview fp-glow"></div><span>Glow</span></button>
+            <button class="filter-btn" data-filter="cool" role="option" aria-selected="false"><div class="filter-preview fp-cool"></div><span>Cool</span></button>
+            <button class="filter-btn" data-filter="bright" role="option" aria-selected="false"><div class="filter-preview fp-bright"></div><span>Bright</span></button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">🖼 Frames</h3>
+          <div class="frame-list" id="frame-list" role="group" aria-label="Photo frames">
+            <button class="frame-btn active" data-frame="none" aria-pressed="true">None</button>
+            <button class="frame-btn" data-frame="polaroid" aria-pressed="false">Polaroid</button>
+            <button class="frame-btn" data-frame="hearts" aria-pressed="false">Hearts ❤️</button>
+            <button class="frame-btn" data-frame="stars" aria-pressed="false">Stars ⭐</button>
+            <button class="frame-btn" data-frame="floral" aria-pressed="false">Floral 🌸</button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">✨ Photo effects</h3>
+          <div class="photo-effects" role="group" aria-label="Toggle photo effects">
+            <button class="effect-btn" type="button" data-effect="vignette" aria-pressed="false"><span aria-hidden="true">◉</span> Vignette</button>
+            <button class="effect-btn" type="button" data-effect="lightLeak" aria-pressed="false"><span aria-hidden="true">☀</span> Light leak</button>
+            <button class="effect-btn" type="button" data-effect="softGlow" aria-pressed="false"><span aria-hidden="true">✧</span> Soft glow</button>
+          </div>
+          <p class="hint-text">Layer a little extra mood onto your shot.</p>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">🌟 Stickers</h3>
+          <div class="sticker-palette" id="sticker-palette" aria-label="Sticker palette" role="list"></div>
+          <p class="hint-text">Tap a sticker to add · Drag to move · Double-click to delete</p>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">🏷 Watermark</h3>
+          <input type="text" id="watermark-text" class="styled-input" placeholder="Your event name…" maxlength="40" aria-label="Watermark text" />
+          <label class="checkbox-label"><input type="checkbox" id="timestamp-toggle" aria-label="Show timestamp" /> Show date/time</label>
+        </div>
+      </aside>
+    </div>
+
+    <div class="result-panel hidden" id="result-panel" role="dialog" aria-label="Captured photo result" aria-modal="true">
+      <div class="result-inner">
+        <h2 class="result-title" id="result-title" tabindex="-1">✨ Looking great!</h2>
+        <div class="result-canvas-wrap">
+          <canvas id="result-canvas" aria-label="Captured photo"></canvas>
+          <img id="result-gif-preview" class="hidden" alt="Animated capture preview" />
+        </div>
+        <div class="result-actions">
+          <button class="btn-primary" data-action="download-photo" data-format="png">⬇️ PNG</button>
+          <button class="btn-primary" data-action="download-photo" data-format="jpg">⬇️ JPG</button>
+          <button class="btn-primary hidden" id="download-gif-btn" data-action="download-photo" data-format="gif">⬇️ GIF</button>
+          <button class="btn-secondary" data-action="save-photo">💾 Save</button>
+          <button class="btn-secondary" data-action="share-photo">📤 Share</button>
+          <button class="btn-ghost" data-action="retake">🔁 Retake</button>
+        </div>
+        <div class="confetti-container" id="confetti-container" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="section about-section" aria-label="About SnapBooth">
+    <div class="about-inner">
+      <div class="about-content">
+        <h2>About SnapBooth</h2>
+        <p>SnapBooth turns your browser and camera into a little photo studio. Choose a look, gather your people, and make a keepsake together.</p>
+        <p>Your photos stay in this browser’s local library. Camera access requires a secure connection and permission from your browser.</p>
+        <div class="tech-pills" aria-label="Technologies used"><span>HTML</span><span>CSS</span><span>JavaScript</span><span>Canvas</span><span>Camera API</span><span>IndexedDB</span><span>PWA</span></div>
+      </div>
+      <div class="about-img" aria-hidden="true">📸</div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" role="contentinfo" aria-label="Site footer">
+  <div class="footer-inner">
+    <div class="footer-brand"><div class="footer-logo">📸 SnapBooth</div><p>Premium photobooth experience in your browser.</p></div>
+    <div class="footer-links" aria-label="Footer links">
+      <h4>Quick Links</h4><a href="./index.html">Home</a><a href="#booth" data-action="open-booth">Studio</a><a href="./gallery.html">Gallery</a><a href="#about">About</a>
+    </div>
+    <div class="footer-note"><h4>Your photos, your device</h4><p>Saved locally in this browser. Download a copy whenever you like.</p></div>
+  </div>
+  <div class="footer-bottom"><p>© <span id="copyright-year">2026</span> SnapBooth · Made for good memories.</p></div>
+</footer>
+
+<div class="modal-backdrop hidden" id="onboarding-modal" role="dialog" aria-modal="true" aria-label="Welcome tutorial">
+  <div class="modal-box">
+    <button class="modal-close" data-action="close-onboarding" aria-label="Close tutorial">✕</button>
+    <div class="onboarding-steps" id="onboarding-steps">
+      <div class="ob-step active" data-step="0"><div class="ob-icon">📸</div><h3>Welcome to SnapBooth!</h3><p>The browser photobooth. Let’s take a quick tour.</p></div>
+      <div class="ob-step" data-step="1"><div class="ob-icon">🎨</div><h3>Pick a filter</h3><p>Choose a real-time filter on the right panel to style your shot.</p></div>
+      <div class="ob-step" data-step="2"><div class="ob-icon">🎞️</div><h3>Choose a mode</h3><p>Single shot, photo strips, GIF, or boomerang — on the left panel.</p></div>
+      <div class="ob-step" data-step="3"><div class="ob-icon">📷</div><h3>Hit capture!</h3><p>Press the big button or Spacebar, then strike your best pose.</p></div>
+    </div>
+    <div class="ob-dots" id="ob-dots" aria-label="Tutorial progress"><span class="ob-dot active"></span><span class="ob-dot"></span><span class="ob-dot"></span><span class="ob-dot"></span></div>
+    <div class="ob-actions"><button class="btn-ghost" id="ob-skip" data-action="close-onboarding">Skip</button><button class="btn-primary" id="ob-next" data-action="next-onboarding">Next →</button></div>
+  </div>
+</div>
+
+<script type="module" src="site.js?v=20261015.15"></script>
+<script type="module" src="script.js?v=20261015.10"></script>
+</body>
+</html>

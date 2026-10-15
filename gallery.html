@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Browse, favorite, share, and download your SnapBooth photos." />
+  <meta name="theme-color" content="#111018" />
+  <meta name="color-scheme" content="dark light" />
+  <meta property="og:title" content="SnapBooth Gallery" />
+  <meta property="og:description" content="Your saved SnapBooth moments, all in one place." />
+  <title>Gallery — SnapBooth</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261014.9" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20261015.20" />
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div id="preloader" aria-label="Loading SnapBooth" role="status">
+  <div class="preloader-inner">
+    <div class="preloader-logo">📸</div>
+    <div class="preloader-text">SnapBooth</div>
+    <div class="preloader-bar"><div class="preloader-fill"></div></div>
+  </div>
+</div>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<nav id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="./index.html" class="nav-logo" aria-label="SnapBooth home">📸 <span>SnapBooth</span></a>
+    <ul class="nav-links" role="list">
+      <li><a href="./index.html" class="nav-link">Home</a></li>
+      <li><a href="./studio.html" class="nav-link">Studio</a></li>
+      <li><a href="./gallery.html" class="nav-link active" aria-current="page">Gallery</a></li>
+      <li><a href="./index.html#features" class="nav-link">About</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">🌙</button>
+      <a class="nav-cta" href="./studio.html" aria-label="Open photo studio">Open studio</a>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">☰</button>
+  </div>
+  <div class="nav-mobile-menu" id="nav-mobile-menu" aria-hidden="true">
+    <a href="./index.html" class="mob-link">🏠 Home</a>
+    <a href="./studio.html" class="mob-link">📸 Studio</a>
+    <a href="./gallery.html" class="mob-link" aria-current="page">🖼️ Gallery</a>
+    <a href="./index.html#features" class="mob-link">ℹ️ About</a>
+  </div>
+</nav>
+
+<main id="main-content" tabindex="-1">
+  <section id="gallery" class="section gallery-section" aria-label="Photo gallery">
+    <div class="gallery-heading">
+      <div class="section-header">
+        <p class="gallery-kicker">YOUR LITTLE COLLECTION</p>
+        <h1 id="gallery-title" tabindex="-1">Your Gallery</h1>
+        <p>Every moment you choose to keep, all in one place.</p>
+      </div>
+      <div class="gallery-summary" aria-live="polite">
+        <span class="gallery-summary-icon" aria-hidden="true">✦</span>
+        <span id="gallery-total-count">0 photos</span>
+        <span class="gallery-summary-note">saved on this device</span>
+      </div>
+    </div>
+
+    <div class="gallery-controls" aria-label="Find and sort photos">
+      <label class="gallery-search-wrap">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" id="gallery-search" class="gallery-search" placeholder="Search your moments" aria-label="Search photos" />
+      </label>
+      <div class="gallery-filter-group" role="group" aria-label="Filter gallery">
+        <button class="gallery-filter active" id="gallery-all-filter" data-gallery-filter="all" aria-pressed="true">All <span id="gallery-all-count">0</span></button>
+        <button class="gallery-filter" id="gallery-favorites-filter" data-gallery-filter="favorites" aria-pressed="false">♡ Favorites <span id="gallery-favorites-count">0</span></button>
+      </div>
+      <label class="gallery-sort-wrap">Sort
+        <select id="gallery-sort" class="styled-select" aria-label="Sort photos">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="gallery-toolbar" aria-label="Gallery actions">
+      <p class="gallery-storage-note"><span aria-hidden="true">●</span> Private to this browser</p>
+      <div class="gallery-toolbar-actions">
+        <input class="hidden" id="gallery-import-input" type="file" accept="image/*" multiple aria-label="Choose photos to add to your gallery" />
+        <button class="btn-secondary" data-action="import-photos">＋ Add photos</button>
+        <button class="btn-secondary" id="gallery-download-all" data-action="download-all" aria-label="Download all photos" disabled>↓ Download all</button>
+        <button class="btn-ghost" id="gallery-clear-all" data-action="clear-gallery" aria-label="Clear all gallery photos" disabled>Clear all</button>
+      </div>
+    </div>
+
+    <div class="gallery-grid" id="gallery-grid" aria-label="Saved photos" role="list"></div>
+    <div class="gallery-empty hidden" id="gallery-empty" aria-live="polite">
+      <div class="gallery-empty-art" aria-hidden="true"><span>✦</span><span>♡</span><span>✧</span></div>
+      <p class="gallery-kicker">A FRESH LITTLE START</p>
+      <h2>No photos yet</h2>
+      <p>Your favorite captures will live here. Head to the studio and make the first one.</p>
+      <a class="btn-primary" href="./studio.html">📸 Go to studio</a>
+    </div>
+    <div class="gallery-empty hidden" id="gallery-no-results" aria-live="polite">
+      <div class="empty-icon" aria-hidden="true">⌕</div>
+      <h2 id="gallery-empty-results-title">No matching photos</h2>
+      <p id="gallery-empty-results-copy">Try another search or show all of your photos.</p>
+      <button class="btn-secondary" data-action="show-all-gallery">Show all photos</button>
+    </div>
+  </section>
+</main>
+
+<div class="gallery-viewer hidden" id="gallery-viewer" role="dialog" aria-modal="true" aria-label="Photo preview">
+  <div class="gallery-viewer-backdrop" data-action="close-gallery-viewer" aria-hidden="true"></div>
+  <div class="gallery-viewer-panel">
+    <div class="gallery-viewer-topbar">
+      <span class="gallery-viewer-count" id="gallery-viewer-count"></span>
+      <button class="gallery-viewer-close" id="gallery-viewer-close" data-action="close-gallery-viewer" aria-label="Close preview">×</button>
+    </div>
+    <div class="gallery-viewer-stage">
+      <button class="gallery-viewer-step" id="gallery-viewer-previous" data-action="gallery-previous" aria-label="Previous photo">←</button>
+      <img id="gallery-viewer-image" alt="" />
+      <button class="gallery-viewer-step" id="gallery-viewer-next" data-action="gallery-next" aria-label="Next photo">→</button>
+    </div>
+    <div class="gallery-viewer-details">
+      <div>
+        <h2 id="gallery-viewer-title">SnapBooth moment</h2>
+        <p id="gallery-viewer-date"></p>
+      </div>
+      <div class="gallery-viewer-actions">
+        <button class="gallery-favorite" id="gallery-viewer-favorite" data-action="toggle-favorite" aria-pressed="false">♡ Favorite</button>
+        <button class="btn-secondary" id="gallery-viewer-download" data-action="gallery-download-photo">↓ Download</button>
+        <button class="btn-secondary" id="gallery-viewer-share" data-action="share-gallery-photo">Share</button>
+        <button class="btn-ghost" id="gallery-viewer-delete" data-action="delete-photo">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="delete-modal" role="dialog" aria-modal="true" aria-label="Confirm delete">
+  <div class="modal-box small">
+    <h2>🗑 Delete photo?</h2>
+    <p>This photo will be permanently removed from your gallery.</p>
+    <div class="modal-btns">
+      <button class="btn-ghost" data-action="close-delete">Cancel</button>
+      <button class="btn-danger" data-action="confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer" role="contentinfo" aria-label="Site footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">📸 SnapBooth</div>
+      <p>Premium photobooth experience in your browser.</p>
+    </div>
+    <div class="footer-links" aria-label="Footer links">
+      <h4>Quick Links</h4>
+      <a href="./index.html">Home</a>
+      <a href="./studio.html">Studio</a>
+      <a href="./gallery.html">Gallery</a>
+      <a href="./index.html#features">About</a>
+    </div>
+    <div class="footer-note">
+      <h4>Your photos, your device</h4>
+      <p>Saved locally in this browser. Download a copy whenever you like.</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© <span id="copyright-year">2026</span> SnapBooth · Made for good memories.</p>
+  </div>
+</footer>
+
+<script type="module" src="site.js?v=20261015.15"></script>
+<script type="module" src="gallery.js?v=20261014.9"></script>
+</body>
+</html>

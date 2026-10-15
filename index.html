@@ -1,0 +1,177 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SnapBooth – Premium photobooth experience for events, parties, and fun." />
+  <meta name="theme-color" content="#111018" />
+  <meta name="color-scheme" content="dark light" />
+  <meta property="og:title" content="SnapBooth – Premium Photo Experience" />
+  <meta property="og:description" content="Capture stunning moments with filters, stickers, and photo strips." />
+  <title>SnapBooth — Make a moment of it</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261014.9" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20261015.20" />
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<!-- ═══════════════════ PRELOADER ═══════════════════ -->
+<div id="preloader" aria-label="Loading SnapBooth" role="status">
+  <div class="preloader-inner">
+    <div class="preloader-logo">📸</div>
+    <div class="preloader-text">SnapBooth</div>
+    <div class="preloader-bar"><div class="preloader-fill"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ NAVIGATION ═══════════════════ -->
+<nav id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="./index.html" class="nav-logo" aria-label="SnapBooth home">📸 <span>SnapBooth</span></a>
+    <ul class="nav-links" role="list">
+      <li><a href="./index.html" class="nav-link active">Home</a></li>
+      <li><a href="./studio.html#booth" class="nav-link">Studio</a></li>
+      <li><a href="./gallery.html" class="nav-link">Gallery</a></li>
+      <li><a href="./studio.html#about" class="nav-link">About</a></li>
+    </ul>
+    <div class="nav-actions">
+      <details class="theme-settings" id="theme-settings">
+        <summary aria-label="Open landing page theme settings" title="Theme settings"><span aria-hidden="true">◐</span> Theme</summary>
+        <div class="theme-settings-panel">
+          <label for="landing-color">Landing page color</label>
+          <div class="theme-color-row">
+            <input id="landing-color" type="color" value="#d95d91" aria-label="Choose landing page background color" />
+            <span id="landing-color-value">#D95D91</span>
+          </div>
+          <label for="landing-text-color">Letter color</label>
+          <div class="theme-color-row">
+            <input id="landing-text-color" type="color" value="#fffafc" aria-label="Choose landing page letter color" />
+            <span id="landing-text-color-value">Auto</span>
+            <button class="theme-auto" id="landing-text-auto" type="button">Auto</button>
+          </div>
+          <div class="theme-swatches" role="group" aria-label="Suggested landing page colors">
+            <button type="button" data-theme-preset="#d95d91" aria-label="Pink theme" title="Pink"></button>
+            <button type="button" data-theme-preset="#8b6ac8" aria-label="Lavender theme" title="Lavender"></button>
+            <button type="button" data-theme-preset="#4c9b88" aria-label="Mint theme" title="Mint"></button>
+            <button type="button" data-theme-preset="#d68b4f" aria-label="Peach theme" title="Peach"></button>
+            <button type="button" data-theme-preset="#5278b8" aria-label="Blue theme" title="Blue"></button>
+            <button type="button" data-theme-preset="#111014" aria-label="Black theme" title="Black"></button>
+            <button type="button" data-theme-preset="#f6f3ef" aria-label="White theme" title="White"></button>
+          </div>
+          <button class="theme-reset" id="theme-reset" type="button">Reset to pink</button>
+        </div>
+      </details>
+      <a class="nav-cta" href="./studio.html" aria-label="Open photobooth">Start booth</a>
+    </div>
+    <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">☰</button>
+  </div>
+  <div class="nav-mobile-menu" id="nav-mobile-menu" aria-hidden="true">
+    <a href="./index.html" class="mob-link">🏠 Home</a>
+    <a href="./studio.html#booth" class="mob-link">📸 Studio</a>
+    <a href="./gallery.html" class="mob-link">🖼️ Gallery</a>
+    <a href="./studio.html#about" class="mob-link">ℹ️ About</a>
+  </div>
+</nav>
+
+<main id="main-content" tabindex="-1">
+<!-- ═══════════════════ LANDING PAGE ═══════════════════ -->
+<section id="landing" class="section landing-section" aria-label="SnapBooth home">
+  <div class="landing-bg" aria-hidden="true">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <div class="landing-hero">
+    <div class="hero-copy">
+      <p class="hero-badge"><span class="hero-badge-dot" aria-hidden="true"></span> YOUR MOMENT, YOUR MASTERPIECE</p>
+      <h1 class="hero-title">Make a <span class="gradient-text">moment</span> of it.</h1>
+      <p class="hero-sub">Turn a quick snapshot into a memory worth keeping. Step into the booth, find your look, and let the good times roll.</p>
+      <div class="hero-actions">
+        <a class="btn-primary hero-btn" href="./studio.html#booth">Step into the booth <span aria-hidden="true">&rarr;</span></a>
+        <a class="btn-ghost" href="./gallery.html">Explore the gallery</a>
+      </div>
+      <p class="hero-proof"><span class="proof-icon" aria-hidden="true">&#10003;</span> Free to use &middot; Photos stay on your device</p>
+    </div>
+
+    <div class="hero-visual" role="img" aria-label="A playful photo booth snapshot of friends celebrating together">
+      <div class="hero-orbit orbit-one" aria-hidden="true"></div>
+      <div class="hero-orbit orbit-two" aria-hidden="true"></div>
+      <div class="hero-photo-shadow" aria-hidden="true"></div>
+      <div class="hero-photo-card" aria-hidden="true">
+        <div class="hero-photo-image">
+          <span class="hero-photo-sun"></span>
+          <span class="hero-photo-cloud cloud-one"></span>
+          <span class="hero-photo-cloud cloud-two"></span>
+          <span class="hero-person person-one"></span>
+          <span class="hero-person person-two"></span>
+          <span class="hero-person person-three"></span>
+          <span class="hero-photo-sparkle sparkle-one">&#10022;</span>
+          <span class="hero-photo-sparkle sparkle-two">&#10022;</span>
+        </div>
+        <div class="hero-photo-caption"><span>GOOD TIMES</span><span>SNAPBOOTH &bull; TODAY</span></div>
+      </div>
+      <div class="hero-float-card float-top" aria-hidden="true">
+        <span class="float-icon">&#10024;</span>
+        <span><strong>Make it yours</strong><small>Filters, frames &amp; fun</small></span>
+      </div>
+      <div class="hero-float-card float-bottom" aria-hidden="true">
+        <span class="float-live-dot"></span>
+        <span><strong>Ready when you are</strong><small>Your camera, your rules</small></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="features-grid" id="features" aria-label="Why people love SnapBooth">
+    <article class="feature-card">
+      <div class="feature-icon" aria-hidden="true">✳</div>
+      <div><h3>Your look, your rules</h3>
+      <p>Try a filter, frame the moment, and add a little personality.</p></div>
+    </article>
+    <article class="feature-card">
+      <div class="feature-icon" aria-hidden="true">↗</div>
+      <div><h3>Everyone fits in</h3>
+      <p>Pass the camera around for silly poses and photo strips.</p></div>
+    </article>
+    <article class="feature-card">
+      <div class="feature-icon" aria-hidden="true">⌑</div>
+      <div><h3>Keep what you love</h3>
+      <p>Save your favorites to this device and download them anytime.</p></div>
+    </article>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="site-footer" role="contentinfo" aria-label="Site footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">📸 SnapBooth</div>
+      <p>Premium photobooth experience in your browser.</p>
+    </div>
+    <div class="footer-links" aria-label="Footer links">
+      <h4>Quick Links</h4>
+      <a href="./index.html">Home</a>
+      <a href="./studio.html#booth">Studio</a>
+      <a href="./gallery.html">Gallery</a>
+      <a href="./studio.html#about">About</a>
+    </div>
+    <div class="footer-note">
+      <h4>Your photos, your device</h4>
+      <p>Saved locally in this browser. Download a copy whenever you like.</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© <span id="copyright-year">2026</span> SnapBooth · Made for good memories.</p>
+  </div>
+</footer>
+
+<script type="module" src="site.js?v=20261015.15"></script>
+</body>
+</html>

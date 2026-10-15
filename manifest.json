@@ -1,0 +1,14 @@
+{
+  "name": "SnapBooth — Make a moment of it",
+  "short_name": "SnapBooth",
+  "description": "A playful browser photo booth for making keepsakes with your favorite people.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111014",
+  "theme_color": "#111014",
+  "orientation": "any",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
