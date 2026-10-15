@@ -123,5 +123,3 @@ export default async function assistant(request, context) {
     return json({ error: 'The AI helper could not connect. Please try again shortly.' }, 502);
   }
 }
-
-export const config = { path: '/api/assistant' };
