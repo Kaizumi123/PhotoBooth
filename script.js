@@ -32,6 +32,7 @@ const State = {
 
   // Capture
   mode: 'single',       // single | strip2 | strip4 | gif | boomerang
+  stripLayout: 'classic',
   countdown: 3,
   filter: 'none',
   effects: new Set(),
@@ -68,6 +69,8 @@ const State = {
   // Audio context
   audioCtx: null,
 };
+
+const STRIP_LAYOUTS = ['classic', 'horizontal', 'grid', 'film', 'polaroid'];
 
 /* ═══════════════════════════════════════════════
    DOM REFERENCES
@@ -112,6 +115,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   bindNavLinks();
   bindActions();
   bindModeButtons();
+  bindStripLayoutButtons();
   bindCountdownButtons();
   bindFilterButtons();
   bindFrameButtons();
@@ -963,22 +967,140 @@ function closeSequenceViewer() {
 }
 
 function createPhotoStrip(photos) {
-  const width = Math.max(...photos.map(photo => photo.width));
-  const gap = Math.round(width * 0.025);
-  const margin = Math.round(width * 0.035);
-  const height = photos.reduce((sum, photo) => sum + photo.height, 0) + gap * (photos.length - 1) + margin * 2;
-  const strip = document.createElement('canvas');
-  strip.width = width + margin * 2;
-  strip.height = height;
-  const ctx = strip.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, strip.width, strip.height);
+  if (!photos.length) throw new Error('A photo strip needs at least one photo.');
+  const largestDimension = Math.max(...photos.map(photo => Math.max(photo.width, photo.height)));
+  const scale = Math.min(1, 1200 / largestDimension);
+  const items = photos.map(photo => ({
+    photo,
+    width: Math.max(1, Math.round(photo.width * scale)),
+    height: Math.max(1, Math.round(photo.height * scale)),
+  }));
+  const maxWidth = Math.max(...items.map(item => item.width));
+  const maxHeight = Math.max(...items.map(item => item.height));
+  const gap = Math.max(18, Math.round(Math.min(maxWidth, maxHeight) * 0.03));
+  const margin = Math.max(28, Math.round(Math.min(maxWidth, maxHeight) * 0.045));
+  const layout = STRIP_LAYOUTS.includes(State.stripLayout) ? State.stripLayout : 'classic';
+
+  function makeCanvas(width, height, background) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(width);
+    canvas.height = Math.ceil(height);
+    const context = canvas.getContext('2d');
+    context.fillStyle = background;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    return { canvas, context };
+  }
+
+  function drawContained(context, item, x, y, boxWidth, boxHeight) {
+    const fit = Math.min(boxWidth / item.width, boxHeight / item.height);
+    const width = item.width * fit;
+    const height = item.height * fit;
+    context.drawImage(item.photo, x + (boxWidth - width) / 2, y + (boxHeight - height) / 2, width, height);
+  }
+
+  function drawCropped(context, item, x, y, width, height) {
+    const targetRatio = width / height;
+    const photoRatio = item.photo.width / item.photo.height;
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = item.photo.width;
+    let sourceHeight = item.photo.height;
+    if (photoRatio > targetRatio) {
+      sourceWidth = item.photo.height * targetRatio;
+      sourceX = (item.photo.width - sourceWidth) / 2;
+    } else {
+      sourceHeight = item.photo.width / targetRatio;
+      sourceY = (item.photo.height - sourceHeight) / 2;
+    }
+    context.drawImage(item.photo, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+  }
+
+  if (layout === 'horizontal') {
+    const width = items.reduce((sum, item) => sum + item.width, 0) + gap * (items.length - 1) + margin * 2;
+    const height = maxHeight + margin * 2;
+    const { canvas, context } = makeCanvas(width, height, '#fffafc');
+    let x = margin;
+    items.forEach(item => {
+      drawContained(context, item, x, margin, item.width, maxHeight);
+      x += item.width + gap;
+    });
+    return canvas;
+  }
+
+  if (layout === 'grid') {
+    const cell = Math.max(maxWidth, maxHeight);
+    const columns = 2;
+    const rows = Math.ceil(items.length / columns);
+    const width = margin * 2 + cell * columns + gap * (columns - 1);
+    const height = margin * 2 + cell * rows + gap * (rows - 1);
+    const { canvas, context } = makeCanvas(width, height, '#f2e7e1');
+    items.forEach((item, index) => {
+      const x = margin + (index % columns) * (cell + gap);
+      const y = margin + Math.floor(index / columns) * (cell + gap);
+      context.fillStyle = '#fffafc';
+      context.fillRect(x - 8, y - 8, cell + 16, cell + 16);
+      drawCropped(context, item, x, y, cell, cell);
+    });
+    return canvas;
+  }
+
+  if (layout === 'film') {
+    const rail = 42;
+    const imageWidth = maxWidth;
+    const width = margin * 2 + imageWidth + rail * 2;
+    const height = margin * 2 + items.reduce((sum, item) => sum + item.height, 0) + gap * (items.length - 1);
+    const { canvas, context } = makeCanvas(width, height, '#26232b');
+    const startY = margin;
+    for (let y = startY; y < height - margin; y += 54) {
+      context.fillStyle = '#f4eadd';
+      context.fillRect(margin + 11, y, 18, 26);
+      context.fillRect(margin + rail + imageWidth + 13, y, 18, 26);
+    }
+    let y = startY;
+    items.forEach(item => {
+      drawContained(context, item, margin + rail, y, imageWidth, item.height);
+      y += item.height + gap;
+    });
+    return canvas;
+  }
+
+  if (layout === 'polaroid') {
+    const padding = Math.max(32, Math.round(Math.min(maxWidth, maxHeight) * 0.045));
+    const captionHeight = 92;
+    const cardWidth = maxWidth + padding * 2;
+    const cardHeight = maxHeight + padding + captionHeight;
+    const width = cardWidth + margin * 2;
+    const height = cardHeight * items.length + gap * (items.length - 1) + margin * 2;
+    const { canvas, context } = makeCanvas(width, height, '#eadbd4');
+    items.forEach((item, index) => {
+      const x = margin;
+      const y = margin + index * (cardHeight + gap);
+      context.shadowColor = 'rgba(32, 22, 25, 0.2)';
+      context.shadowBlur = 14;
+      context.shadowOffsetY = 5;
+      context.fillStyle = '#fffdf9';
+      context.fillRect(x, y, cardWidth, cardHeight);
+      context.shadowColor = 'transparent';
+      context.shadowBlur = 0;
+      context.shadowOffsetY = 0;
+      drawContained(context, item, x + padding, y + padding, maxWidth, maxHeight);
+      context.fillStyle = '#78686a';
+      context.font = '700 22px sans-serif';
+      context.textAlign = 'center';
+      context.fillText(`SNAPBOOTH  •  ${String(index + 1).padStart(2, '0')}`, x + cardWidth / 2, y + padding + maxHeight + 58);
+    });
+    return canvas;
+  }
+
+  const width = maxWidth + margin * 2;
+  const height = items.reduce((sum, item) => sum + item.height, 0) + gap * (items.length - 1) + margin * 2;
+  const { canvas, context } = makeCanvas(width, height, '#fffafc');
   let y = margin;
-  photos.forEach(photo => {
-    ctx.drawImage(photo, margin, y, width, photo.height);
-    y += photo.height + gap;
+  items.forEach(item => {
+    drawContained(context, item, margin, y, maxWidth, item.height);
+    y += item.height + gap;
   });
-  return strip;
+  return canvas;
 }
 
 function retake() {
@@ -1134,7 +1256,11 @@ function openBooth() {
 
 function savePreferences() {
   try {
-    localStorage.setItem('sb_prefs', JSON.stringify({ sound: State.soundEnabled, light: State.lightMode }));
+    localStorage.setItem('sb_prefs', JSON.stringify({
+      sound: State.soundEnabled,
+      light: State.lightMode,
+      stripLayout: State.stripLayout,
+    }));
   } catch (error) {
     console.warn('Could not save preferences:', error);
   }
@@ -1143,6 +1269,7 @@ function savePreferences() {
 function loadPreferences() {
   try {
     const p = JSON.parse(localStorage.getItem('sb_prefs') || '{}');
+    if (STRIP_LAYOUTS.includes(p.stripLayout)) State.stripLayout = p.stripLayout;
     if (p.light) { State.lightMode = true; document.body.classList.add('light-mode'); $('theme-toggle').textContent = '☀️'; }
     if (p.sound === false) { State.soundEnabled = false; $('sound-toggle').textContent = '🔇'; }
   } catch (_) {}
@@ -1505,6 +1632,26 @@ function bindModeButtons() {
       this.classList.add('active'); this.setAttribute('aria-pressed','true');
       State.mode = this.dataset.mode;
       retake();
+    });
+  });
+}
+
+function bindStripLayoutButtons() {
+  const buttons = [...document.querySelectorAll('.strip-layout-btn')];
+  buttons.forEach(button => {
+    const selected = button.dataset.stripLayout === State.stripLayout;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+    button.addEventListener('click', () => {
+      const layout = button.dataset.stripLayout;
+      if (!STRIP_LAYOUTS.includes(layout)) return;
+      State.stripLayout = layout;
+      buttons.forEach(option => {
+        const active = option === button;
+        option.classList.toggle('active', active);
+        option.setAttribute('aria-pressed', String(active));
+      });
+      savePreferences();
     });
   });
 }
