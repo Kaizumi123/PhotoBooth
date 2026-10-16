@@ -18,6 +18,7 @@ const State = {
   cameraStopTimer: null,
   facingMode: 'user',
   cameraReady: false,
+  cameraPaused: false,
   boothVisible: false,
   filterLoop: null,
 
@@ -127,7 +128,7 @@ function updateBoothVisibility(isVisible) {
   if (State.boothVisible) {
     clearTimeout(State.cameraStopTimer);
     State.cameraStopTimer = null;
-    if (document.visibilityState === 'visible' && !State.cameraReady) initCamera();
+    if (document.visibilityState === 'visible' && !State.cameraReady && !State.cameraPaused) initCamera();
   } else if (!State.fullscreen) scheduleCameraStop();
 }
 
@@ -149,7 +150,7 @@ document.addEventListener('visibilitychange', () => {
     suspended?.catch?.(() => {});
     return;
   }
-  if (State.boothVisible && !State.cameraReady) initCamera();
+  if (State.boothVisible && !State.cameraReady && !State.cameraPaused) initCamera();
 });
 
 window.addEventListener('pagehide', stopCamera);
@@ -757,6 +758,7 @@ function bindActions() {
         if (control instanceof HTMLAnchorElement) event.preventDefault();
         openBooth();
       } else if (action === 'retry-camera') initCamera();
+      else if (action === 'toggle-camera') toggleCamera();
       else if (action === 'flip-camera') flipCamera();
       else if (action === 'fullscreen') toggleFullscreen();
       else if (action === 'capture') startCapture();
@@ -790,7 +792,7 @@ function bindActions() {
 function openBooth() {
   document.querySelector('#booth').scrollIntoView({ behavior: 'smooth' });
   State.boothVisible = true;
-  if (!State.cameraReady) initCamera();
+  if (!State.cameraReady && !State.cameraPaused) initCamera();
 }
 
 function savePreferences() {
@@ -813,12 +815,16 @@ function loadPreferences() {
    CAMERA
 ═══════════════════════════════════════ */
 async function initCamera() {
+  if (State.cameraPaused) return;
   if (State.cameraRequest) return State.cameraRequest;
   if (State.cameraReady && State.stream && State.stream.getVideoTracks().some(track => track.readyState === 'live')) return;
 
   cameraError.classList.add('hidden');
+  cameraLoading.classList.remove('camera-is-off');
+  $('camera-loading-message').textContent = 'Starting camera…';
   cameraLoading.style.display = 'flex';
   State.cameraReady = false;
+  syncCameraToggle();
   if (State.stream) State.stream.getTracks().forEach(track => track.stop());
   State.stream = null;
   const requestId = ++State.cameraRequestId;
@@ -874,6 +880,7 @@ async function initCamera() {
       cameraLoading.style.display = 'none';
       cameraError.classList.add('hidden');
       State.cameraReady = true;
+      syncCameraToggle();
       startFilterLoop();
       checkMultipleCameras();
       showToast('Camera ready.', 'success');
@@ -886,11 +893,46 @@ async function initCamera() {
         handleCameraError(err);
       }
     } finally {
-      if (requestId === State.cameraRequestId) State.cameraRequest = null;
+      if (requestId === State.cameraRequestId) {
+        State.cameraRequest = null;
+        syncCameraToggle();
+      }
     }
   })();
   State.cameraRequest = request;
   return request;
+}
+
+function syncCameraToggle() {
+  const button = $('camera-toggle-btn');
+  if (!button) return;
+  const active = Boolean(State.cameraReady && State.stream && State.stream.getVideoTracks().some(track => track.readyState === 'live'));
+  const label = active ? 'Turn camera off' : 'Turn camera on';
+  button.classList.toggle('is-on', active);
+  button.setAttribute('aria-pressed', String(active));
+  button.setAttribute('aria-label', label);
+  button.title = label;
+}
+
+function toggleCamera() {
+  if (State.capturing) {
+    showToast('Wait until the photo finishes before turning the camera off.', 'info');
+    return;
+  }
+
+  if (State.cameraReady || State.cameraRequest || State.stream) {
+    State.cameraPaused = true;
+    stopCamera();
+    cameraError.classList.add('hidden');
+    $('camera-loading-message').textContent = 'Camera is off. Use the camera button to turn it on.';
+    cameraLoading.classList.add('camera-is-off');
+    cameraLoading.style.display = 'flex';
+    showToast('Camera turned off.', 'info');
+    return;
+  }
+
+  State.cameraPaused = false;
+  initCamera();
 }
 
 function handleCameraError(err) {
@@ -918,11 +960,12 @@ async function checkMultipleCameras() {
 }
 
 async function flipCamera() {
+  const shouldRestart = !State.cameraPaused;
   State.facingMode = State.facingMode === 'user' ? 'environment' : 'user';
   // Mirror flip only for front cam
   video.style.transform = State.facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
   stopCamera();
-  await initCamera();
+  if (shouldRestart) await initCamera();
 }
 
 function stopCamera() {
@@ -940,6 +983,7 @@ function stopCamera() {
   State.cameraReady = false;
   filterCanvas.style.opacity = '0';
   cameraLoading.style.display = 'none';
+  syncCameraToggle();
 }
 
 /* ═══════════════════════════════════════════════

@@ -1479,6 +1479,45 @@ body.light-mode #booth.booth-fullscreen .capture-controls {
   box-shadow: none;
 }
 
+.camera-toggle-btn {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--c-text-muted);
+}
+.camera-toggle-btn[aria-pressed="true"] {
+  color: #f6b6d8;
+  border-color: rgba(246,182,216,0.38);
+  background: rgba(246,182,216,0.1);
+}
+.camera-toggle-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.camera-toggle-off-icon { display: block; }
+.camera-toggle-on-icon { display: none; }
+.camera-toggle-btn[aria-pressed="true"] .camera-toggle-off-icon { display: none; }
+.camera-toggle-btn[aria-pressed="true"] .camera-toggle-on-icon { display: block; }
+.camera-toggle-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; }
+.camera-loading.camera-is-off .spinner { display: none; }
+.camera-loading.camera-is-off p {
+  max-width: 28ch;
+  padding: 0 1rem;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.5;
+  text-align: center;
+}
+body.light-mode .camera-toggle-btn[aria-pressed="true"] {
+  color: #9c3d70;
+  border-color: rgba(156,61,112,0.24);
+  background: rgba(156,61,112,0.08);
+}
+
 #result-gif-preview { width: 100%; height: auto; }
 
 /* Gentle motion for the landing page and placed stickers. */
