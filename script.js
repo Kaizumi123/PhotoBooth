@@ -925,6 +925,7 @@ function clearShotHistory() {
 function openSequenceViewer(index, returnFocus) {
   if (index < 0 || index >= State.shotSequencePhotos.length) return;
   State.sequenceViewerIndex = index;
+  State.sequenceViewerDirection = 0;
   State.sequenceViewerReturnFocus = returnFocus;
   renderSequenceViewer();
   sequenceViewer.classList.remove('hidden');
@@ -937,6 +938,10 @@ function renderSequenceViewer() {
   sequenceViewerImage.src = photo.src;
   sequenceViewerImage.alt = `Photo ${photo.number}`;
   sequenceViewerCaption.textContent = `Photo ${photo.number} of ${State.shotSequenceCount}`;
+  sequenceViewerImage.style.setProperty('--sequence-slide-x', `${State.sequenceViewerDirection * -18}px`);
+  sequenceViewerImage.classList.remove('is-changing');
+  void sequenceViewerImage.offsetWidth;
+  sequenceViewerImage.classList.add('is-changing');
   sequenceViewer.querySelectorAll('.sequence-viewer-nav').forEach(button => {
     button.disabled = State.shotSequencePhotos.length < 2;
   });
@@ -946,6 +951,7 @@ function navigateSequenceViewer(direction) {
   const count = State.shotSequencePhotos.length;
   if (count < 2) return;
   State.sequenceViewerIndex = (State.sequenceViewerIndex + direction + count) % count;
+  State.sequenceViewerDirection = Math.sign(direction);
   renderSequenceViewer();
 }
 
