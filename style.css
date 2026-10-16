@@ -1296,8 +1296,10 @@ body.light-mode .site-footer { background: rgba(255,255,255,0.78); }
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(ellipse at 50% 28%, rgba(117,86,190,0.12), transparent 38rem),
-    linear-gradient(180deg, rgba(255,255,255,0.012), transparent 40%);
+    radial-gradient(ellipse at 12% 12%, rgba(244,114,182,0.13), transparent 34rem),
+    radial-gradient(ellipse at 88% 24%, rgba(139,122,220,0.16), transparent 40rem),
+    radial-gradient(ellipse at 50% 100%, rgba(238,190,152,0.055), transparent 38rem),
+    linear-gradient(180deg, #15121d 0%, #101018 52%, #14111b 100%);
 }
 .booth-section::before {
   content: '';
@@ -1309,6 +1311,34 @@ body.light-mode .site-footer { background: rgba(255,255,255,0.78); }
   background-image: radial-gradient(rgba(255,255,255,0.12) 0.7px, transparent 0.7px);
   background-size: 24px 24px;
   mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 80%, transparent);
+}
+.booth-section::after {
+  content: '';
+  position: absolute;
+  inset: -8rem -6vw;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.48;
+  filter: blur(30px);
+  background:
+    radial-gradient(ellipse at 18% 30%, rgba(245,123,177,0.22), transparent 24rem),
+    radial-gradient(ellipse at 84% 46%, rgba(145,128,226,0.22), transparent 28rem);
+  animation: studioAmbientDrift 28s ease-in-out infinite alternate;
+}
+body.light-mode .booth-section {
+  background:
+    radial-gradient(ellipse at 12% 12%, rgba(246,177,211,0.24), transparent 34rem),
+    radial-gradient(ellipse at 88% 24%, rgba(183,174,241,0.2), transparent 40rem),
+    linear-gradient(180deg, #fbf6fa 0%, #f4f2f8 58%, #faf5f2 100%);
+}
+body.light-mode .booth-section::before { opacity: 0.22; background-image: radial-gradient(rgba(65,48,74,0.16) 0.7px, transparent 0.7px); }
+body.light-mode .booth-section::after { opacity: 0.36; }
+@keyframes studioAmbientDrift {
+  from { transform: translate3d(-1.5%, -0.5%, 0) scale(0.98); }
+  to { transform: translate3d(1.5%, 0.8%, 0) scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .booth-section::after { animation: none; }
 }
 .booth-layout {
   position: relative;
