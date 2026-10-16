@@ -40,6 +40,9 @@ const State = {
   bg: 'none',
   stripCaptures: [],
   shotSequenceCount: 0,
+  shotSequencePhotos: [],
+  sequenceViewerIndex: 0,
+  sequenceViewerReturnFocus: null,
   capturing: false,
   captureTimer: null,
   captureResolve: null,
@@ -89,6 +92,9 @@ const stripPreview = $('strip-preview');
 const shotSequence = $('shot-sequence');
 const shotSequenceCount = $('shot-sequence-count');
 const clearShotHistoryButton = $('clear-shot-history');
+const sequenceViewer = $('sequence-viewer');
+const sequenceViewerImage = $('sequence-viewer-image');
+const sequenceViewerCaption = $('sequence-viewer-caption');
 const themeOverlay = $('theme-overlay');
 const frameOverlay = $('frame-overlay');
 const stickerLayer = $('sticker-layer');
@@ -861,20 +867,31 @@ function addPhotoFrame(photo) {
 
 function addStripThumbnail(canvas) {
   State.shotSequenceCount += 1;
+  const photo = { src: createPreviewDataUrl(canvas, 1280), number: State.shotSequenceCount };
+  State.shotSequencePhotos.push(photo);
+  if (State.shotSequencePhotos.length > 24) State.shotSequencePhotos.shift();
 
   const item = document.createElement('div');
   item.className = 'shot-sequence-item';
   item.setAttribute('role', 'listitem');
   item.setAttribute('aria-label', `Photo ${State.shotSequenceCount} in sequence`);
+  const openButton = document.createElement('button');
+  openButton.className = 'shot-sequence-open';
+  openButton.type = 'button';
+  openButton.setAttribute('aria-label', `View photo ${State.shotSequenceCount}`);
   const thumb = document.createElement('img');
   thumb.className = 'strip-thumb';
-  thumb.src = createPreviewDataUrl(canvas, 240);
+  thumb.src = photo.src;
   thumb.alt = `Photo ${State.shotSequenceCount}`;
+  openButton.appendChild(thumb);
+  openButton.addEventListener('click', () => {
+    openSequenceViewer([...stripPreview.children].indexOf(item), openButton);
+  });
   const number = document.createElement('span');
   number.className = 'shot-sequence-number';
   number.setAttribute('aria-hidden', 'true');
   number.textContent = String(State.shotSequenceCount).padStart(2, '0');
-  item.append(thumb, number);
+  item.append(openButton, number);
   stripPreview.appendChild(item);
   while (stripPreview.children.length > 24) stripPreview.firstElementChild.remove();
   updateShotSequence();
@@ -900,8 +917,43 @@ function updateShotSequence() {
 
 function clearShotHistory() {
   State.shotSequenceCount = 0;
+  State.shotSequencePhotos = [];
   stripPreview.replaceChildren();
   updateShotSequence();
+}
+
+function openSequenceViewer(index, returnFocus) {
+  if (index < 0 || index >= State.shotSequencePhotos.length) return;
+  State.sequenceViewerIndex = index;
+  State.sequenceViewerReturnFocus = returnFocus;
+  renderSequenceViewer();
+  sequenceViewer.classList.remove('hidden');
+  sequenceViewer.querySelector('.sequence-viewer-close').focus({ preventScroll: true });
+}
+
+function renderSequenceViewer() {
+  const photo = State.shotSequencePhotos[State.sequenceViewerIndex];
+  if (!photo) return;
+  sequenceViewerImage.src = photo.src;
+  sequenceViewerImage.alt = `Photo ${photo.number}`;
+  sequenceViewerCaption.textContent = `Photo ${photo.number} of ${State.shotSequenceCount}`;
+  sequenceViewer.querySelectorAll('.sequence-viewer-nav').forEach(button => {
+    button.disabled = State.shotSequencePhotos.length < 2;
+  });
+}
+
+function navigateSequenceViewer(direction) {
+  const count = State.shotSequencePhotos.length;
+  if (count < 2) return;
+  State.sequenceViewerIndex = (State.sequenceViewerIndex + direction + count) % count;
+  renderSequenceViewer();
+}
+
+function closeSequenceViewer() {
+  sequenceViewer.classList.add('hidden');
+  const returnFocus = State.sequenceViewerReturnFocus;
+  State.sequenceViewerReturnFocus = null;
+  if (returnFocus?.isConnected && document.visibilityState === 'visible') returnFocus.focus({ preventScroll: true });
 }
 
 function createPhotoStrip(photos) {
@@ -1038,6 +1090,9 @@ function bindActions() {
       else if (action === 'capture') startCapture();
       else if (action === 'retake') retake();
       else if (action === 'close-result') closeResultPanel();
+      else if (action === 'close-sequence-viewer') closeSequenceViewer();
+      else if (action === 'previous-sequence-photo') navigateSequenceViewer(-1);
+      else if (action === 'next-sequence-photo') navigateSequenceViewer(1);
       else if (action === 'clear-shot-history') clearShotHistory();
       else if (action === 'download-photo') downloadPhoto(control.dataset.format);
       else if (action === 'save-photo') saveToGallery();
@@ -1544,13 +1599,21 @@ function bindKeyboard() {
     if (e.defaultPrevented || e.repeat || e.altKey || e.ctrlKey || e.metaKey) return;
     const onboardingOpen = !$('onboarding-modal').classList.contains('hidden');
     const resultOpen = !resultPanel.classList.contains('hidden');
+    const sequenceViewerOpen = !sequenceViewer.classList.contains('hidden');
     if (e.code === 'Escape') {
       if (onboardingOpen) closeOnboarding();
+      else if (sequenceViewerOpen) closeSequenceViewer();
       else if (resultOpen) closeResultPanel();
       return;
     }
 
-    const activeModal = onboardingOpen ? $('onboarding-modal') : resultOpen ? resultPanel : null;
+    if (sequenceViewerOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      navigateSequenceViewer(e.key === 'ArrowLeft' ? -1 : 1);
+      return;
+    }
+
+    const activeModal = onboardingOpen ? $('onboarding-modal') : sequenceViewerOpen ? sequenceViewer : resultOpen ? resultPanel : null;
     if (activeModal && e.key === 'Tab') {
       const focusable = [...activeModal.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')]
         .filter(element => !element.closest('.hidden') && element.getClientRects().length > 0);

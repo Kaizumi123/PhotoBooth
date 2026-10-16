@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261016.8" />
+  <link rel="stylesheet" href="style.css?v=20261016.12" />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -112,7 +112,7 @@
       <div class="booth-center" aria-label="Camera view">
         <section class="shot-sequence" id="shot-sequence" aria-label="Photo sequence">
           <div class="shot-sequence-header">
-            <div><h2>Photo sequence</h2><p id="shot-sequence-count" role="status" aria-live="polite">0 photos</p></div>
+            <div><h2>Photo sequence</h2><p id="shot-sequence-count" role="status" aria-live="polite">0 photos</p><span class="sequence-viewer-hint">Tap a photo to browse</span></div>
             <button class="sequence-clear" id="clear-shot-history" type="button" data-action="clear-shot-history" disabled>Clear</button>
           </div>
           <p class="sequence-empty" id="shot-sequence-empty">Your photos will appear here in order.</p>
@@ -222,6 +222,17 @@
         <div class="confetti-container" id="confetti-container" aria-hidden="true"></div>
       </div>
     </div>
+    <div class="sequence-viewer hidden" id="sequence-viewer" role="dialog" aria-modal="true" aria-label="Photo sequence viewer">
+      <div class="sequence-viewer-inner">
+        <button class="sequence-viewer-close" type="button" data-action="close-sequence-viewer" aria-label="Close photo viewer" title="Close">&times;</button>
+        <button class="sequence-viewer-nav sequence-viewer-previous" type="button" data-action="previous-sequence-photo" aria-label="Previous photo">&lsaquo;</button>
+        <figure class="sequence-viewer-figure">
+          <img id="sequence-viewer-image" alt="" />
+          <figcaption id="sequence-viewer-caption" role="status" aria-live="polite"></figcaption>
+        </figure>
+        <button class="sequence-viewer-nav sequence-viewer-next" type="button" data-action="next-sequence-photo" aria-label="Next photo">&rsaquo;</button>
+      </div>
+    </div>
   </section>
 
   <section id="about" class="section about-section" aria-label="About SnapBooth">
@@ -263,6 +274,6 @@
 </div>
 
 <script type="module" src="site.js?v=20261015.15"></script>
-<script type="module" src="script.js?v=20261016.9"></script>
+<script type="module" src="script.js?v=20261016.13"></script>
 </body>
 </html>
