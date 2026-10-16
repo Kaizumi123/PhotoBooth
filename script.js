@@ -39,6 +39,7 @@ const State = {
   theme: 'none',
   bg: 'none',
   stripCaptures: [],
+  shotSequenceCount: 0,
   capturing: false,
   captureTimer: null,
   captureResolve: null,
@@ -81,6 +82,9 @@ const cameraLoading= $('camera-loading');
 const cameraError  = $('camera-error');
 const cameraWrap   = $('camera-wrap');
 const stripPreview = $('strip-preview');
+const shotSequence = $('shot-sequence');
+const shotSequenceCount = $('shot-sequence-count');
+const clearShotHistoryButton = $('clear-shot-history');
 const themeOverlay = $('theme-overlay');
 const frameOverlay = $('frame-overlay');
 const stickerLayer = $('sticker-layer');
@@ -269,7 +273,6 @@ function startCapture() {
   State.capturing = true;
   const captureId = ++State.captureId;
   captureBtn.disabled = true;
-  stripPreview.replaceChildren();
   State.stripCaptures = [];
 
   (async () => {
@@ -284,7 +287,7 @@ function startCapture() {
         if (!State.capturing || captureId !== State.captureId) return;
         const shot = createPhotoCanvas();
         State.stripCaptures.push(shot);
-        addStripThumbnail(shot, index + 1);
+        addStripThumbnail(shot);
         if (index < count - 1) {
           showToast(`Photo ${index + 1} of ${count} captured. Get ready for the next one.`);
           await wait(700);
@@ -326,7 +329,6 @@ async function captureAnimatedSequence(captureId) {
   if (!State.capturing || captureId !== State.captureId) return;
   triggerCaptureFlash();
   State.gifFrames = [];
-  stripPreview.replaceChildren();
   const frameCount = 8;
   for (let index = 0; index < frameCount; index++) {
     if (!State.capturing || captureId !== State.captureId) return;
@@ -338,7 +340,6 @@ async function captureAnimatedSequence(captureId) {
     frame.height = height;
     frame.getContext('2d').drawImage(shot, 0, 0, width, height);
     State.gifFrames.push(frame);
-    addStripThumbnail(frame, index + 1);
     await wait(120);
     if (!State.capturing || captureId !== State.captureId) return;
   }
@@ -359,6 +360,7 @@ async function captureAnimatedSequence(captureId) {
   $('download-gif-btn').classList.remove('hidden');
   State.currentPhoto = gifData;
   $('result-title').textContent = State.mode === 'boomerang' ? 'A moment that comes back around.' : 'Your little moment, in motion.';
+  addStripThumbnail(State.gifFrames[0]);
   showResultPanel();
 }
 
@@ -823,12 +825,45 @@ function addPhotoFrame(photo) {
   return photo;
 }
 
-function addStripThumbnail(canvas, index) {
+function addStripThumbnail(canvas) {
+  State.shotSequenceCount += 1;
+  const previewCanvas = document.createElement('canvas');
+  previewCanvas.width = Math.min(240, canvas.width);
+  previewCanvas.height = Math.max(1, Math.round(canvas.height * previewCanvas.width / canvas.width));
+  previewCanvas.getContext('2d').drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+
+  const item = document.createElement('div');
+  item.className = 'shot-sequence-item';
+  item.setAttribute('role', 'listitem');
+  item.setAttribute('aria-label', `Photo ${State.shotSequenceCount} in sequence`);
   const thumb = document.createElement('img');
   thumb.className = 'strip-thumb';
-  thumb.src = canvas.toDataURL('image/jpeg', 0.82);
-  thumb.alt = `Captured photo ${index}`;
-  stripPreview.appendChild(thumb);
+  thumb.src = previewCanvas.toDataURL('image/jpeg', 0.78);
+  thumb.alt = `Photo ${State.shotSequenceCount}`;
+  const number = document.createElement('span');
+  number.className = 'shot-sequence-number';
+  number.setAttribute('aria-hidden', 'true');
+  number.textContent = String(State.shotSequenceCount).padStart(2, '0');
+  item.append(thumb, number);
+  stripPreview.appendChild(item);
+  while (stripPreview.children.length > 24) stripPreview.firstElementChild.remove();
+  updateShotSequence();
+  stripPreview.scrollLeft = stripPreview.scrollWidth;
+}
+
+function updateShotSequence() {
+  const hasPhotos = State.shotSequenceCount > 0;
+  shotSequence.classList.toggle('has-photos', hasPhotos);
+  clearShotHistoryButton.disabled = !hasPhotos;
+  shotSequenceCount.textContent = State.shotSequenceCount > 24
+    ? `Showing latest 24 of ${State.shotSequenceCount} photos`
+    : `${State.shotSequenceCount} photo${State.shotSequenceCount === 1 ? '' : 's'}`;
+}
+
+function clearShotHistory() {
+  State.shotSequenceCount = 0;
+  stripPreview.replaceChildren();
+  updateShotSequence();
 }
 
 function createPhotoStrip(photos) {
@@ -864,7 +899,6 @@ function retake() {
   resultCanvas.classList.remove('hidden');
   State.currentPhoto = null;
   State.stripCaptures = [];
-  stripPreview.replaceChildren();
   State.capturing = false;
   captureBtn.disabled = false;
   State.modalReturnFocus = null;
@@ -965,6 +999,7 @@ function bindActions() {
       else if (action === 'fullscreen') toggleFullscreen();
       else if (action === 'capture') startCapture();
       else if (action === 'retake') retake();
+      else if (action === 'clear-shot-history') clearShotHistory();
       else if (action === 'download-photo') downloadPhoto(control.dataset.format);
       else if (action === 'save-photo') saveToGallery();
       else if (action === 'share-photo') sharePhoto();

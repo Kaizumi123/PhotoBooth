@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261016.4" />
+  <link rel="stylesheet" href="style.css?v=20261016.5" />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -110,6 +110,14 @@
       </aside>
 
       <div class="booth-center" aria-label="Camera view">
+        <section class="shot-sequence" id="shot-sequence" aria-label="Photo sequence">
+          <div class="shot-sequence-header">
+            <div><h2>Photo sequence</h2><p id="shot-sequence-count" role="status" aria-live="polite">0 photos</p></div>
+            <button class="sequence-clear" id="clear-shot-history" type="button" data-action="clear-shot-history" disabled>Clear</button>
+          </div>
+          <p class="sequence-empty" id="shot-sequence-empty">Your photos will appear here in order.</p>
+          <div class="strip-preview" id="strip-preview" aria-label="Captured photos in order" aria-live="polite" role="list"></div>
+        </section>
         <div class="camera-wrap" id="camera-wrap" role="region" aria-label="Camera preview">
           <div class="camera-loading" id="camera-loading" aria-live="polite"><div class="spinner" aria-hidden="true"></div><p id="camera-loading-message">Starting camera…</p></div>
           <video id="video" autoplay playsinline muted aria-label="Camera preview"></video>
@@ -125,7 +133,6 @@
           <div class="flash-overlay" id="flash-overlay" aria-hidden="true"></div>
           <div class="theme-overlay" id="theme-overlay" aria-hidden="true"></div>
         </div>
-        <div class="strip-preview" id="strip-preview" aria-label="Captured photos strip" role="list"></div>
         <div class="capture-controls" aria-label="Capture controls">
           <button class="icon-btn" id="fullscreen-btn" data-action="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen (F)">⛶</button>
           <button class="capture-btn" id="capture-btn" data-action="capture" aria-label="Take photo" title="Capture (Space)"><span class="capture-ring"></span><span class="capture-dot"></span></button>
@@ -246,6 +253,6 @@
 </div>
 
 <script type="module" src="site.js?v=20261015.15"></script>
-<script type="module" src="script.js?v=20261016.6"></script>
+<script type="module" src="script.js?v=20261016.7"></script>
 </body>
 </html>
