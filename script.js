@@ -21,6 +21,11 @@ const State = {
   cameraPaused: false,
   boothVisible: false,
   filterLoop: null,
+  faceLandmarker: null,
+  faceLandmarkerPromise: null,
+  faceLandmarks: null,
+  wackyShot: false,
+  lastFaceDetection: 0,
 
   // Capture
   mode: 'single',       // single | strip2 | strip4 | gif | boomerang
@@ -63,6 +68,7 @@ const State = {
 const $ = id => document.getElementById(id);
 const video        = $('video');
 const filterCanvas = $('filter-canvas');
+const faceEffectsCanvas = $('face-effects-canvas');
 const captureBtn   = $('capture-btn');
 const resultPanel  = $('result-panel');
 const resultCanvas = $('result-canvas');
@@ -253,6 +259,14 @@ function nextOnboardingStep() {
 function startCapture() {
   if (!State.cameraReady || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
     showToast('Camera is not ready yet. Allow camera access and try again.');
+    return;
+  }
+  if (State.wackyShot && !State.faceLandmarker) {
+    showToast('Wait for Wacky Shot to finish loading, then try again.', 'info');
+    return;
+  }
+  if (State.wackyShot && !State.faceLandmarks?.length) {
+    showToast('Move your face into the camera view so Wacky Shot can find you.', 'info');
     return;
   }
   if (State.capturing) return;
@@ -501,6 +515,9 @@ function createPhotoCanvas(playShutter = true) {
   const ctx = photo.getContext('2d');
   applyFilterToCanvas(ctx, video, width, height, State.filter);
   drawBackgroundTint(ctx, width, height);
+  if (State.wackyShot && State.faceLandmarks?.length) {
+    drawWackyFace(ctx, State.faceLandmarks[0], width, height, State.facingMode === 'user');
+  }
   drawPhotoOverlays(ctx, width, height);
   if (playShutter) triggerCaptureFlash();
   return addPhotoFrame(photo);
@@ -590,6 +607,168 @@ function drawPhotoOverlays(ctx, width, height) {
     ctx.fillRect(width - textWidth - padding * 1.5, height - fontSize - padding, textWidth + padding, fontSize + padding * 0.45);
     ctx.fillStyle = '#fff';
     ctx.fillText(caption, width - padding, height - padding * 0.6);
+  }
+}
+
+function drawWackyFace(ctx, landmarks, width, height, mirror = false) {
+  if (!landmarks || landmarks.length < 292) return;
+  const point = index => {
+    const landmark = landmarks[index];
+    return { x: (mirror ? 1 - landmark.x : landmark.x) * width, y: landmark.y * height };
+  };
+  const midpoint = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  const leftEye = midpoint(point(33), point(133));
+  const rightEye = midpoint(point(263), point(362));
+  const eyeDistance = Math.hypot(rightEye.x - leftEye.x, rightEye.y - leftEye.y);
+  if (eyeDistance < width * 0.035) return;
+  const lensWidth = eyeDistance * 0.78;
+  const lensHeight = lensWidth * 0.66;
+  const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
+  const lineWidth = Math.max(3, width * 0.009);
+
+  ctx.save();
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#371c4a';
+  ctx.fillStyle = 'rgba(255, 105, 195, 0.26)';
+  for (const eye of [leftEye, rightEye]) {
+    ctx.save();
+    ctx.translate(eye.x, eye.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, lensWidth / 2, lensHeight / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.beginPath();
+  ctx.moveTo(leftEye.x + Math.cos(angle) * lensWidth / 2, leftEye.y + Math.sin(angle) * lensWidth / 2);
+  ctx.lineTo(rightEye.x - Math.cos(angle) * lensWidth / 2, rightEye.y - Math.sin(angle) * lensWidth / 2);
+  ctx.stroke();
+
+  const nose = point(1);
+  const noseRadius = Math.max(7, eyeDistance * 0.095);
+  const noseGlow = ctx.createRadialGradient(nose.x - noseRadius * 0.3, nose.y - noseRadius * 0.35, 1, nose.x, nose.y, noseRadius);
+  noseGlow.addColorStop(0, '#ffb0b5');
+  noseGlow.addColorStop(1, '#f04465');
+  ctx.fillStyle = noseGlow;
+  ctx.beginPath();
+  ctx.arc(nose.x, nose.y, noseRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(119, 22, 56, 0.7)';
+  ctx.lineWidth = Math.max(1.5, lineWidth * 0.45);
+  ctx.stroke();
+
+  const mouthLeft = point(61);
+  const mouthRight = point(291);
+  const mouthCenter = midpoint(mouthLeft, mouthRight);
+  const mouthWidth = Math.hypot(mouthRight.x - mouthLeft.x, mouthRight.y - mouthLeft.y);
+  const mustacheWidth = Math.max(eyeDistance * 0.7, mouthWidth * 1.18);
+  const mustacheHeight = Math.max(8, mustacheWidth * 0.3);
+  const mustacheTop = mouthCenter.y - mustacheHeight * 0.1;
+  ctx.fillStyle = '#39243a';
+  ctx.beginPath();
+  ctx.moveTo(mouthCenter.x, mustacheTop + mustacheHeight * 0.3);
+  ctx.bezierCurveTo(mouthCenter.x - mustacheWidth * 0.12, mustacheTop - mustacheHeight * 0.38, mouthCenter.x - mustacheWidth * 0.35, mustacheTop - mustacheHeight * 0.48, mouthCenter.x - mustacheWidth * 0.5, mustacheTop);
+  ctx.bezierCurveTo(mouthCenter.x - mustacheWidth * 0.53, mustacheTop + mustacheHeight * 0.42, mouthCenter.x - mustacheWidth * 0.36, mustacheTop + mustacheHeight * 0.64, mouthCenter.x - mustacheWidth * 0.06, mustacheTop + mustacheHeight * 0.42);
+  ctx.quadraticCurveTo(mouthCenter.x, mustacheTop + mustacheHeight * 0.34, mouthCenter.x + mustacheWidth * 0.06, mustacheTop + mustacheHeight * 0.42);
+  ctx.bezierCurveTo(mouthCenter.x + mustacheWidth * 0.36, mustacheTop + mustacheHeight * 0.64, mouthCenter.x + mustacheWidth * 0.53, mustacheTop + mustacheHeight * 0.42, mouthCenter.x + mustacheWidth * 0.5, mustacheTop);
+  ctx.bezierCurveTo(mouthCenter.x + mustacheWidth * 0.35, mustacheTop - mustacheHeight * 0.48, mouthCenter.x + mustacheWidth * 0.12, mustacheTop - mustacheHeight * 0.38, mouthCenter.x, mustacheTop + mustacheHeight * 0.3);
+  ctx.closePath();
+  ctx.fill();
+
+  const faceCenterX = (leftEye.x + rightEye.x) / 2;
+  const hatBaseY = Math.max(lensHeight * 0.6, eyeDistance * 0.82);
+  const hatTipY = eyeDistance * 2.05;
+  ctx.beginPath();
+  ctx.moveTo(faceCenterX - eyeDistance * 0.32, leftEye.y - hatBaseY);
+  ctx.lineTo(faceCenterX, leftEye.y - hatTipY);
+  ctx.lineTo(faceCenterX + eyeDistance * 0.32, rightEye.y - hatBaseY);
+  ctx.closePath();
+  const hatGradient = ctx.createLinearGradient(0, leftEye.y - hatTipY, 0, leftEye.y - hatBaseY);
+  hatGradient.addColorStop(0, '#ffd35b');
+  hatGradient.addColorStop(0.52, '#ff67b5');
+  hatGradient.addColorStop(1, '#8d62f5');
+  ctx.fillStyle = hatGradient;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(67, 36, 88, 0.75)';
+  ctx.lineWidth = Math.max(2, width * 0.005);
+  ctx.stroke();
+  ctx.fillStyle = '#fff3a8';
+  ctx.beginPath();
+  ctx.arc(faceCenterX, leftEye.y - hatTipY, Math.max(4, eyeDistance * 0.075), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+async function loadFaceLandmarker() {
+  if (State.faceLandmarker) return State.faceLandmarker;
+  if (!State.faceLandmarkerPromise) {
+    State.faceLandmarkerPromise = (async () => {
+      const { FaceLandmarker, FilesetResolver } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32');
+      const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm');
+      State.faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+        },
+        runningMode: 'VIDEO',
+        numFaces: 1,
+      });
+      return State.faceLandmarker;
+    })().catch(error => {
+      State.faceLandmarkerPromise = null;
+      throw error;
+    });
+  }
+  return State.faceLandmarkerPromise;
+}
+
+function setWackyShotStatus(message) {
+  const status = $('wacky-shot-status');
+  if (status && status.textContent !== message) status.textContent = message;
+}
+
+function clearWackyFacePreview() {
+  if (!faceEffectsCanvas) return;
+  faceEffectsCanvas.getContext('2d').clearRect(0, 0, faceEffectsCanvas.width, faceEffectsCanvas.height);
+}
+
+async function toggleWackyShot() {
+  if (State.capturing) {
+    showToast('Wait until the photo finishes before changing effects.', 'info');
+    return;
+  }
+  State.wackyShot = !State.wackyShot;
+  const button = $('wacky-shot-btn');
+  const label = $('wacky-shot-label');
+  button.classList.toggle('active', State.wackyShot);
+  button.setAttribute('aria-pressed', String(State.wackyShot));
+  if (!State.wackyShot) {
+    label.textContent = 'Wacky shot';
+    State.faceLandmarks = null;
+    clearWackyFacePreview();
+    setWackyShotStatus('Face tracking is optional and runs on your device.');
+    return;
+  }
+
+  label.textContent = 'Loading…';
+  setWackyShotStatus('Loading face tracking. The camera preview stays on this device.');
+  try {
+    await loadFaceLandmarker();
+    if (!State.wackyShot) return;
+    label.textContent = 'Wacky shot';
+    setWackyShotStatus(State.cameraReady ? 'Move into view for silly glasses, a red nose, a mustache, and a party hat.' : 'Turn on the camera and step into view to try your Wacky Shot.');
+    showToast('Wacky Shot is ready. Find your face in the camera.', 'success');
+  } catch (error) {
+    if (!State.wackyShot) return;
+    console.warn('Could not load face tracking:', error);
+    State.wackyShot = false;
+    button.classList.remove('active');
+    button.setAttribute('aria-pressed', 'false');
+    label.textContent = 'Wacky shot';
+    setWackyShotStatus('Could not load face tracking. Check your internet connection and try again.');
+    showToast('Face tracking could not load. Check your internet connection and try again.', 'error');
   }
 }
 
@@ -964,6 +1143,7 @@ async function flipCamera() {
   State.facingMode = State.facingMode === 'user' ? 'environment' : 'user';
   // Mirror flip only for front cam
   video.style.transform = State.facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+  faceEffectsCanvas.style.transform = State.facingMode === 'user' ? 'scaleX(-1)' : 'none';
   stopCamera();
   if (shouldRestart) await initCamera();
 }
@@ -980,6 +1160,8 @@ function stopCamera() {
   video.srcObject = null;
   cancelAnimationFrame(State.filterLoop);
   State.filterLoop = null;
+  State.faceLandmarks = null;
+  clearWackyFacePreview();
   State.cameraReady = false;
   filterCanvas.style.opacity = '0';
   cameraLoading.style.display = 'none';
@@ -996,11 +1178,37 @@ function startFilterLoop() {
   const scale = Math.min(1, 640 / sourceWidth, 480 / sourceHeight);
   filterCanvas.width = Math.round(sourceWidth * scale);
   filterCanvas.height = Math.round(sourceHeight * scale);
+  faceEffectsCanvas.width = filterCanvas.width;
+  faceEffectsCanvas.height = filterCanvas.height;
+  faceEffectsCanvas.style.transform = State.facingMode === 'user' ? 'scaleX(-1)' : 'none';
   let lastRender = 0;
 
   function drawFrame(now = 0) {
     if (!State.cameraReady) return;
     State.filterLoop = requestAnimationFrame(drawFrame);
+
+    if (State.wackyShot && State.faceLandmarker && now - State.lastFaceDetection >= 100) {
+      State.lastFaceDetection = now;
+      try {
+        const result = State.faceLandmarker.detectForVideo(video, now);
+        State.faceLandmarks = result.faceLandmarks || [];
+        if (State.faceLandmarks.length) {
+          clearWackyFacePreview();
+          drawWackyFace(faceEffectsCanvas.getContext('2d'), State.faceLandmarks[0], faceEffectsCanvas.width, faceEffectsCanvas.height);
+          setWackyShotStatus('Face found! Capture your Wacky Shot when you’re ready.');
+        } else {
+          clearWackyFacePreview();
+          setWackyShotStatus('No face found yet. Move into the camera view.');
+        }
+      } catch (error) {
+        console.warn('Face detection frame failed:', error);
+        State.faceLandmarks = null;
+        clearWackyFacePreview();
+        setWackyShotStatus('Face tracking paused. Try turning Wacky Shot off and on again.');
+      }
+    } else if (!State.wackyShot) {
+      clearWackyFacePreview();
+    }
 
     if (State.filter === 'none') {
       filterCanvas.style.opacity = '0';
@@ -1167,6 +1375,7 @@ function bindFrameButtons() {
 
 function bindPhotoEffects() {
   document.querySelectorAll('.effect-btn').forEach(button => {
+    if (button.id === 'wacky-shot-btn') return;
     button.addEventListener('click', () => {
       const effect = button.dataset.effect;
       const enabled = !State.effects.has(effect);
@@ -1177,6 +1386,7 @@ function bindPhotoEffects() {
       if (effect === 'softGlow') cameraWrap.classList.toggle('effect-glow', enabled);
     });
   });
+  $('wacky-shot-btn').addEventListener('click', toggleWackyShot);
 }
 
 function applyFrameVisual(frame) {
