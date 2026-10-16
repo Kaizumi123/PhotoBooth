@@ -138,7 +138,7 @@ window.addEventListener('DOMContentLoaded', () => {
       Promise.all(keys.filter(key => key.startsWith('snapbooth-')).map(key => caches.delete(key)))
     ).catch(error => console.warn('Could not clear the local SnapBooth cache:', error));
   } else if (location.protocol === 'https:') {
-    navigator.serviceWorker.register('./sw.js?v=20261016.29').catch(error => {
+    navigator.serviceWorker.register('./sw.js?v=20261017.30').catch(error => {
       console.warn('SnapBooth offline cache could not be updated:', error);
     });
   }
