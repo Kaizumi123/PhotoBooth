@@ -2603,3 +2603,19 @@ body.gallery-viewer-open { overflow: hidden; }
   .sequence-viewer-inner,
   .sequence-viewer-figure img.is-changing { animation: none !important; transition: none !important; }
 }
+
+/* Keep the landing page theme visible in the top navigation as well. */
+#main-nav {
+  --landing-bg: #d95d91;
+  --landing-foreground: #fffafc;
+  --c-text: var(--landing-foreground);
+  --c-text-muted: color-mix(in srgb, var(--landing-foreground) 78%, transparent);
+  --c-surface: color-mix(in srgb, var(--landing-bg) 84%, var(--landing-foreground));
+  --c-surface2: color-mix(in srgb, var(--landing-bg) 72%, var(--landing-foreground));
+  --c-border: color-mix(in srgb, var(--landing-foreground) 24%, transparent);
+  background: color-mix(in srgb, var(--landing-bg) 92%, transparent);
+  border-color: var(--c-border);
+}
+body.light-mode #main-nav { background: color-mix(in srgb, var(--landing-bg) 92%, transparent); }
+#main-nav .nav-logo { color: var(--landing-foreground); -webkit-text-fill-color: var(--landing-foreground); }
+#main-nav .nav-cta { background: var(--landing-foreground); color: var(--landing-bg); }

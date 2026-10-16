@@ -1,6 +1,7 @@
 /* Shared page shell: loading state, landing decoration, and offline cache. */
 window.addEventListener('DOMContentLoaded', () => {
   const landing = document.getElementById('landing');
+  const navigation = document.getElementById('main-nav');
   const colorPicker = document.getElementById('landing-color');
   const colorValue = document.getElementById('landing-color-value');
   const textColorPicker = document.getElementById('landing-text-color');
@@ -11,13 +12,13 @@ window.addEventListener('DOMContentLoaded', () => {
   let customLandingTextColor = '';
 
   function updateLandingForeground() {
-    if (!landing) return;
     const red = parseInt(currentLandingColor.slice(1, 3), 16);
     const green = parseInt(currentLandingColor.slice(3, 5), 16);
     const blue = parseInt(currentLandingColor.slice(5, 7), 16);
     const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
     const foreground = customLandingTextColor || (brightness > 160 ? '#30242a' : '#fffafc');
-    landing.style.setProperty('--landing-foreground', foreground);
+    landing?.style.setProperty('--landing-foreground', foreground);
+    navigation?.style.setProperty('--landing-foreground', foreground);
     if (textColorPicker) textColorPicker.value = foreground;
     if (textColorValue) textColorValue.textContent = customLandingTextColor ? foreground.toUpperCase() : 'Auto';
   }
@@ -29,6 +30,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (landing) {
       landing.style.setProperty('--landing-bg', color);
     }
+    navigation?.style.setProperty('--landing-bg', color);
     updateLandingForeground();
     if (colorPicker) colorPicker.value = color;
     if (colorValue) colorValue.textContent = color.toUpperCase();
