@@ -2619,3 +2619,54 @@ body.gallery-viewer-open { overflow: hidden; }
 body.light-mode #main-nav { background: color-mix(in srgb, var(--landing-bg) 92%, transparent); }
 #main-nav .nav-logo { color: var(--landing-foreground); -webkit-text-fill-color: var(--landing-foreground); }
 #main-nav .nav-cta { background: var(--landing-foreground); color: var(--landing-bg); }
+
+/* Compact landing header: keep Settings at the top without the site navigation. */
+body.landing-home { --nav-h: 68px; }
+#main-nav.settings-bar { padding-bottom: 0; }
+.settings-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: min(1360px, 100%);
+  height: var(--nav-h);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+.settings-bar .theme-settings-panel {
+  right: 0;
+  max-height: calc(100dvh - 5.5rem);
+  overflow-y: auto;
+}
+.settings-panel-title {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.settings-menu-section {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--c-border);
+}
+.settings-menu-section h3 {
+  margin-bottom: 0.4rem;
+  color: var(--c-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.settings-page-links { display: grid; gap: 0.15rem; }
+.settings-page-links a {
+  padding: 0.38rem 0.5rem;
+  border-radius: 8px;
+  color: var(--c-text);
+  font-size: 0.82rem;
+}
+.settings-page-links a:hover,
+.settings-page-links a:focus-visible { background: var(--c-surface2); }
+@media (max-width: 768px) {
+  #main-nav.settings-bar { padding-bottom: 0; }
+  .settings-bar-inner { height: 68px; padding: 0 0.75rem; }
+  .settings-bar .theme-settings-panel { right: 0; width: min(250px, calc(100vw - 1.5rem)); }
+}
