@@ -631,11 +631,11 @@ function drawFocusSensor(ctx, landmarks, width, height) {
   const corner = Math.min((right - left) * 0.2, (bottom - top) * 0.2);
 
   ctx.save();
+  ctx.globalAlpha = 0.38;
   ctx.strokeStyle = '#fff4a3';
-  ctx.lineWidth = Math.max(3, width * 0.006);
+  ctx.lineWidth = Math.max(2, width * 0.004);
   ctx.lineCap = 'round';
-  ctx.shadowColor = 'rgba(20, 14, 28, 0.8)';
-  ctx.shadowBlur = Math.max(4, width * 0.012);
+  ctx.shadowBlur = 0;
   ctx.beginPath();
   ctx.moveTo(left, top + corner); ctx.lineTo(left, top); ctx.lineTo(left + corner, top);
   ctx.moveTo(right - corner, top); ctx.lineTo(right, top); ctx.lineTo(right, top + corner);
