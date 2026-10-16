@@ -1,5 +1,5 @@
 /* SnapBooth service worker: keep the offline copy current. */
-const CACHE = 'snapbooth-v39';
+const CACHE = 'snapbooth-v40';
 const ASSETS = [
   './',
   './index.html',
