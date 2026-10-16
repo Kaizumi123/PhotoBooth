@@ -7,6 +7,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const textColorPicker = document.getElementById('landing-text-color');
   const textColorValue = document.getElementById('landing-text-color-value');
   const themeSettings = document.getElementById('theme-settings');
+  const studioDate = document.getElementById('studio-current-date');
   const defaultLandingColor = '#d95d91';
   let currentLandingColor = defaultLandingColor;
   let customLandingTextColor = '';
@@ -70,6 +71,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
   initHelpAssistant();
 
+  function updateStudioDate() {
+    if (!studioDate) return;
+    const now = new Date();
+    const localDate = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+    studioDate.dateTime = localDate;
+    studioDate.textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(now);
+  }
+  updateStudioDate();
+  window.setInterval(updateStudioDate, 60_000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updateStudioDate();
+  });
+
   const year = document.getElementById('copyright-year');
   if (year) year.textContent = String(new Date().getFullYear());
 
@@ -124,16 +138,17 @@ window.addEventListener('DOMContentLoaded', () => {
       Promise.all(keys.filter(key => key.startsWith('snapbooth-')).map(key => caches.delete(key)))
     ).catch(error => console.warn('Could not clear the local SnapBooth cache:', error));
   } else if (location.protocol === 'https:') {
-    navigator.serviceWorker.register('./sw.js?v=20261016.22').catch(error => {
+    navigator.serviceWorker.register('./sw.js?v=20261016.28').catch(error => {
       console.warn('SnapBooth offline cache could not be updated:', error);
     });
   }
 });
 
 function initHelpAssistant() {
+  const localOnly = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
   const root = document.createElement('section');
   root.className = 'help-assistant';
-  root.setAttribute('aria-label', 'SnapBooth AI help assistant');
+  root.setAttribute('aria-label', 'SnapBooth help assistant');
   root.innerHTML = `
     <button class="assistant-launcher" type="button" aria-expanded="false" aria-controls="assistant-panel">
       <span aria-hidden="true">✦</span><span>Ask for help</span>
@@ -168,6 +183,12 @@ function initHelpAssistant() {
   const send = form.querySelector('button[type="submit"]');
   const history = [];
 
+  if (localOnly) {
+    root.querySelector('.assistant-header small').textContent = 'Local AI · configure a key for any question';
+    messages.querySelector('.assistant-message-bot').textContent = 'I can answer general questions when the local AI server has a key. Without one, I can still help with common booth issues.';
+    root.querySelector('.assistant-privacy').textContent = 'With a local key, questions are sent to OpenAI through this computer.';
+  }
+
   function setOpen(open) {
     panel.hidden = !open;
     launcher.setAttribute('aria-expanded', String(open));
@@ -179,6 +200,16 @@ function initHelpAssistant() {
     message.textContent = text;
     messages.appendChild(message);
     messages.scrollTop = messages.scrollHeight;
+  }
+  function addTypingIndicator() {
+    const indicator = document.createElement('p');
+    indicator.className = 'assistant-message assistant-message-bot assistant-typing';
+    indicator.setAttribute('role', 'status');
+    indicator.setAttribute('aria-label', 'Assistant is typing');
+    indicator.innerHTML = '<span>Typing</span><span class="assistant-typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+    messages.appendChild(indicator);
+    messages.scrollTop = messages.scrollHeight;
+    return indicator;
   }
 
   launcher.addEventListener('click', () => setOpen(panel.hidden));
@@ -205,25 +236,74 @@ function initHelpAssistant() {
     input.disabled = true;
     send.disabled = true;
     send.textContent = '…';
+    const typingStartedAt = performance.now();
+    const typingIndicator = addTypingIndicator();
     try {
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history.slice(-12) }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || typeof result.reply !== 'string') {
-        throw new Error(typeof result.error === 'string' ? result.error : 'The assistant is unavailable. Please try again shortly.');
+      let reply = '';
+      try {
+        const response = await fetch('/api/assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: history.slice(-12) }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || typeof result.reply !== 'string') {
+          if (!localOnly) throw new Error(typeof result.error === 'string' ? result.error : 'The assistant is unavailable. Please try again shortly.');
+          reply = response.status === 502 && typeof result.error === 'string'
+            ? result.error
+            : localBoothReply(question);
+        } else {
+          reply = result.reply;
+        }
+      } catch (error) {
+        if (!localOnly) throw error;
+        reply = localBoothReply(question);
       }
-      history.push({ role: 'assistant', content: result.reply });
-      addMessage(result.reply, 'assistant');
+      const typingDelay = Math.max(0, 450 - (performance.now() - typingStartedAt));
+      if (typingDelay) await new Promise(resolve => setTimeout(resolve, typingDelay));
+      typingIndicator.remove();
+      history.push({ role: 'assistant', content: reply });
+      addMessage(reply, 'assistant');
     } catch (error) {
+      typingIndicator.remove();
       addMessage(error.message || 'I can’t reach the assistant right now. Please try again shortly.', 'assistant');
     } finally {
+      typingIndicator.remove();
       input.disabled = false;
       send.disabled = false;
       send.textContent = '↑';
       input.focus();
     }
   });
+}
+
+function localBoothReply(question) {
+  const text = question.toLowerCase();
+  const mentions = (...terms) => terms.some(term => text.includes(term));
+
+  if (mentions('camera', 'webcam', 'black screen', 'permission', 'video')) {
+    return 'Allow camera access in your browser’s site settings, then refresh the page. Close other apps that may be using the camera and try again.';
+  }
+  if (mentions('strip', 'layout', 'polaroid', 'film', 'grid', 'horizontal')) {
+    return 'Choose a strip style, then take the photos. It uses Strip ×2 automatically; choose Strip ×4 in the Mode controls if you want four photos.';
+  }
+  if (mentions('download', 'save', 'gallery', 'where are my photos')) {
+    return 'After taking a photo, use PNG or JPG to download it. Choose Save to add it to this browser’s local gallery.';
+  }
+  if (mentions('close', 'x button', 'ekis', 'output photo', 'result photo')) {
+    return 'Tap the pink × in the top-right of the output screen to close it and return to the Studio.';
+  }
+  if (mentions('gif', 'boomerang', 'moving photo')) {
+    return 'Choose GIF or Boomerang in the Mode controls before capturing. Those modes create a moving photo instead of a still strip.';
+  }
+  if (mentions('filter', 'effect', 'frame', 'sticker', 'watermark')) {
+    return 'Choose a filter, frame, or effect in the Studio before capturing. The selected look is included in the photo.';
+  }
+  if (mentions('capture', 'take a photo', 'shutter', 'countdown', 'button')) {
+    return 'Choose Single, Strip ×2, or Strip ×4 in Mode, then press the large capture button. If asked, allow camera access.';
+  }
+  if (mentions('phone', 'mobile', 'cellphone')) {
+    return 'This local address works on this computer only. To use the booth on a phone, open the deployed HTTPS site or share a secure local preview.';
+  }
+  return 'I can answer common SnapBooth questions offline. For general questions, the local server needs a valid OpenAI key; restart it and enter the key at its hidden prompt.';
 }

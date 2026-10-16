@@ -13,8 +13,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261014.9" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261016.18" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Pacifico&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20261016.23" />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -29,7 +29,7 @@
 
 <nav id="main-nav" role="navigation" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="./index.html" class="nav-logo" aria-label="SnapBooth home">📸 <span>SnapBooth</span></a>
+    <a href="./index.html" class="nav-logo studio-brand" aria-label="Photobooth home"><span class="studio-brand-name">Photobooth</span><time class="studio-brand-date" id="studio-current-date"></time></a>
     <ul class="nav-links" role="list">
       <li><a href="./index.html" class="nav-link">Home</a></li>
       <li><a href="#booth" class="nav-link active" data-section="booth" data-action="open-booth">Studio</a></li>
@@ -98,7 +98,7 @@
               <span class="strip-layout-name">Polaroid</span>
             </button>
           </div>
-          <p class="hint-text">Used for Strip ×2 and Strip ×4.</p>
+          <p class="hint-text">Choosing a layout starts Strip ×2. Choose Strip ×4 above for four photos.</p>
         </div>
         <div class="panel-section">
           <h3 class="panel-title">⏱ Countdown</h3>
@@ -221,8 +221,8 @@
     </div>
 
     <div class="result-panel hidden" id="result-panel" role="dialog" aria-label="Captured photo result" aria-modal="true">
+      <button class="result-close" type="button" data-action="close-result" aria-label="Close photo results" title="Close">&times;</button>
       <div class="result-inner">
-        <button class="result-close" type="button" data-action="close-result" aria-label="Close photo results" title="Close">&times;</button>
         <h2 class="result-title" id="result-title" tabindex="-1">✨ Looking great!</h2>
         <div class="result-review-grid">
           <section class="result-shots hidden" id="result-shots" aria-label="Photos in capture order">
@@ -299,7 +299,7 @@
   </div>
 </div>
 
-<script type="module" src="site.js?v=20261015.15"></script>
-<script type="module" src="script.js?v=20261016.15"></script>
+<script type="module" src="site.js?v=20261016.21"></script>
+<script type="module" src="script.js?v=20261016.16"></script>
 </body>
 </html>

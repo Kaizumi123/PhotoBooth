@@ -1652,6 +1652,28 @@ function bindStripLayoutButtons() {
         option.setAttribute('aria-pressed', String(active));
       });
       savePreferences();
+
+      const isStripMode = State.mode === 'strip2' || State.mode === 'strip4';
+      if (!isStripMode && resultPanel.classList.contains('hidden')) {
+        document.querySelector('.mode-btn[data-mode="strip2"]')?.click();
+        showToast('Strip ×2 mode selected. Choose Strip ×4 above if you want four photos.');
+        return;
+      }
+
+      if (isStripMode && State.stripCaptures.length > 1 && State.currentPhoto) {
+        const output = createPhotoStrip(State.stripCaptures);
+        resultCanvas.width = output.width;
+        resultCanvas.height = output.height;
+        resultCanvas.getContext('2d').drawImage(output, 0, 0);
+        State.currentPhoto = resultCanvas.toDataURL('image/png');
+        resultCanvas.classList.remove('hidden');
+        $('result-gif-preview').classList.add('hidden');
+        showToast('Layout applied to your photo strip.');
+      } else if (!isStripMode) {
+        showToast('Choose Strip ×2 or Strip ×4, then take your photos to use this layout.');
+      } else {
+        showToast('Layout saved for your next photo strip.');
+      }
     });
   });
 }
