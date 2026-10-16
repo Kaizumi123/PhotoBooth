@@ -76,6 +76,10 @@ const focusSensorCanvas = $('focus-sensor-canvas');
 const captureBtn   = $('capture-btn');
 const resultPanel  = $('result-panel');
 const resultCanvas = $('result-canvas');
+const resultInner = resultPanel.querySelector('.result-inner');
+const resultShots = $('result-shots');
+const resultShotList = $('result-shot-list');
+const resultOutputLabel = $('result-output-label');
 const countdown    = $('countdown-display');
 const flashEl      = $('flash-overlay');
 const cameraLoading= $('camera-loading');
@@ -299,6 +303,7 @@ function startCapture() {
       resultCanvas.height = output.height;
       resultCanvas.getContext('2d').drawImage(output, 0, 0);
       State.currentPhoto = resultCanvas.toDataURL('image/png');
+      renderResultShots(State.stripCaptures);
       $('result-gif-preview').classList.add('hidden');
       $('result-gif-preview').removeAttribute('src');
       resultCanvas.classList.remove('hidden');
@@ -360,6 +365,7 @@ async function captureAnimatedSequence(captureId) {
   $('download-gif-btn').classList.remove('hidden');
   State.currentPhoto = gifData;
   $('result-title').textContent = State.mode === 'boomerang' ? 'A moment that comes back around.' : 'Your little moment, in motion.';
+  renderResultShots([]);
   addStripThumbnail(State.gifFrames[0]);
   showResultPanel();
 }
@@ -367,7 +373,6 @@ async function captureAnimatedSequence(captureId) {
 function showResultPanel() {
   State.modalReturnFocus = captureBtn;
   resultPanel.classList.remove('hidden');
-  const resultInner = resultPanel.querySelector('.result-inner');
   const cameraRect = cameraWrap.getBoundingClientRect();
   const resultRect = resultInner.getBoundingClientRect();
   const cameraCenterX = cameraRect.left + cameraRect.width / 2;
@@ -380,6 +385,28 @@ function showResultPanel() {
   void resultInner.offsetWidth;
   resultInner.classList.add('photo-printing');
   $('result-title').focus({ preventScroll: true });
+}
+
+function renderResultShots(photos) {
+  const multiplePhotos = photos.length > 1;
+  resultShots.classList.toggle('hidden', !multiplePhotos);
+  resultOutputLabel.classList.toggle('hidden', !multiplePhotos);
+  resultInner.classList.toggle('has-multiple-shots', multiplePhotos);
+  resultShotList.replaceChildren();
+  if (!multiplePhotos) return;
+
+  photos.forEach((photo, index) => {
+    const card = document.createElement('figure');
+    card.className = 'result-shot-card';
+    card.setAttribute('role', 'listitem');
+    const image = document.createElement('img');
+    image.src = createPreviewDataUrl(photo, 420);
+    image.alt = `Photo ${index + 1}`;
+    const caption = document.createElement('figcaption');
+    caption.textContent = `Photo ${index + 1}`;
+    card.append(image, caption);
+    resultShotList.appendChild(card);
+  });
 }
 
 function encodeGifDataUrl(frames, delay) {
@@ -827,10 +854,6 @@ function addPhotoFrame(photo) {
 
 function addStripThumbnail(canvas) {
   State.shotSequenceCount += 1;
-  const previewCanvas = document.createElement('canvas');
-  previewCanvas.width = Math.min(240, canvas.width);
-  previewCanvas.height = Math.max(1, Math.round(canvas.height * previewCanvas.width / canvas.width));
-  previewCanvas.getContext('2d').drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
 
   const item = document.createElement('div');
   item.className = 'shot-sequence-item';
@@ -838,7 +861,7 @@ function addStripThumbnail(canvas) {
   item.setAttribute('aria-label', `Photo ${State.shotSequenceCount} in sequence`);
   const thumb = document.createElement('img');
   thumb.className = 'strip-thumb';
-  thumb.src = previewCanvas.toDataURL('image/jpeg', 0.78);
+  thumb.src = createPreviewDataUrl(canvas, 240);
   thumb.alt = `Photo ${State.shotSequenceCount}`;
   const number = document.createElement('span');
   number.className = 'shot-sequence-number';
@@ -849,6 +872,14 @@ function addStripThumbnail(canvas) {
   while (stripPreview.children.length > 24) stripPreview.firstElementChild.remove();
   updateShotSequence();
   stripPreview.scrollLeft = stripPreview.scrollWidth;
+}
+
+function createPreviewDataUrl(canvas, maxWidth) {
+  const preview = document.createElement('canvas');
+  preview.width = Math.min(maxWidth, canvas.width);
+  preview.height = Math.max(1, Math.round(canvas.height * preview.width / canvas.width));
+  preview.getContext('2d').drawImage(canvas, 0, 0, preview.width, preview.height);
+  return preview.toDataURL('image/jpeg', 0.78);
 }
 
 function updateShotSequence() {

@@ -2401,3 +2401,36 @@ body.gallery-viewer-open { overflow: hidden; }
   .landing-bg .particle,
   .features-grid .feature-card { animation: none !important; }
 }
+
+/* Make multi-shot results easy to review before saving the finished strip. */
+.result-inner.has-multiple-shots {
+  width: min(900px, calc(100vw - 2rem));
+  max-width: 900px;
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  align-items: stretch;
+  gap: 1rem;
+}
+.result-inner.has-multiple-shots .result-title { align-self: center; text-align: center; }
+.result-shots { width: 100%; }
+.result-shots h3, .result-output-label { margin: 0 0 0.55rem; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-text-muted); }
+.result-shot-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.65rem; }
+.result-shot-card {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--c-border);
+  border-radius: 13px;
+  background: var(--c-surface2);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+  animation: thumbPop 0.3s ease both;
+}
+.result-shot-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.result-shot-card figcaption { padding: 0.42rem 0.55rem; color: var(--c-text-muted); font-size: 0.7rem; font-weight: 700; }
+.result-inner.has-multiple-shots .result-canvas-wrap { display: flex; justify-content: center; max-height: 46vh; }
+.result-inner.has-multiple-shots #result-canvas { width: 100%; height: 46vh; max-height: 46vh; object-fit: contain; }
+@media (max-width: 600px) {
+  .result-inner.has-multiple-shots { padding: 1rem; gap: 0.8rem; }
+  .result-shot-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+}
