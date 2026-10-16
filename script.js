@@ -387,6 +387,13 @@ function showResultPanel() {
   $('result-title').focus({ preventScroll: true });
 }
 
+function closeResultPanel() {
+  resultPanel.classList.add('hidden');
+  const returnFocus = State.modalReturnFocus || captureBtn;
+  State.modalReturnFocus = null;
+  if (document.visibilityState === 'visible') returnFocus.focus({ preventScroll: true });
+}
+
 function renderResultShots(photos) {
   const multiplePhotos = photos.length > 1;
   resultShots.classList.toggle('hidden', !multiplePhotos);
@@ -1030,6 +1037,7 @@ function bindActions() {
       else if (action === 'fullscreen') toggleFullscreen();
       else if (action === 'capture') startCapture();
       else if (action === 'retake') retake();
+      else if (action === 'close-result') closeResultPanel();
       else if (action === 'clear-shot-history') clearShotHistory();
       else if (action === 'download-photo') downloadPhoto(control.dataset.format);
       else if (action === 'save-photo') saveToGallery();
@@ -1538,7 +1546,7 @@ function bindKeyboard() {
     const resultOpen = !resultPanel.classList.contains('hidden');
     if (e.code === 'Escape') {
       if (onboardingOpen) closeOnboarding();
-      else if (resultOpen) retake();
+      else if (resultOpen) closeResultPanel();
       return;
     }
 

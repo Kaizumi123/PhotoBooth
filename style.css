@@ -2430,6 +2430,24 @@ body.gallery-viewer-open { overflow: hidden; }
 .result-shot-card figcaption { padding: 0.42rem 0.55rem; color: var(--c-text-muted); font-size: 0.7rem; font-weight: 700; }
 .result-inner.has-multiple-shots .result-canvas-wrap { display: flex; justify-content: center; max-height: 46vh; }
 .result-inner.has-multiple-shots #result-canvas { width: 100%; height: 46vh; max-height: 46vh; object-fit: contain; }
+.result-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  background: var(--c-surface2);
+  color: var(--c-text);
+  font-size: 1.45rem;
+  line-height: 1;
+  transition: transform var(--transition), background var(--transition), border-color var(--transition);
+}
+.result-close:hover { transform: rotate(90deg); background: var(--c-accent); border-color: var(--c-accent); color: #fff; }
 @media (max-width: 600px) {
   .result-inner.has-multiple-shots { padding: 1rem; gap: 0.8rem; }
   .result-shot-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
