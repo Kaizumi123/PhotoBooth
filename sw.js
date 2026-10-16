@@ -1,13 +1,13 @@
 /* SnapBooth service worker: keep the offline copy current. */
-const CACHE = 'snapbooth-v23';
+const CACHE = 'snapbooth-v24';
 const ASSETS = [
   './',
   './index.html',
   './studio.html',
   './gallery.html',
-  './style.css?v=20261016.2',
+  './style.css?v=20261016.3',
   './site.js?v=20261015.15',
-  './script.js?v=20261016.2',
+  './script.js?v=20261016.3',
   './gallery.js?v=20261014.9',
   './gallery-store.js',
   './manifest.json',
