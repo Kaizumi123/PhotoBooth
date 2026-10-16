@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261016.7" />
+  <link rel="stylesheet" href="style.css?v=20261016.8" />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -198,14 +198,18 @@
       <div class="result-inner">
         <button class="result-close" type="button" data-action="close-result" aria-label="Close photo results" title="Close">&times;</button>
         <h2 class="result-title" id="result-title" tabindex="-1">✨ Looking great!</h2>
-        <section class="result-shots hidden" id="result-shots" aria-label="Photos in capture order">
-          <h3>Photos in order</h3>
-          <div class="result-shot-list" id="result-shot-list" role="list"></div>
-        </section>
-        <h3 class="result-output-label hidden" id="result-output-label">Finished photo strip</h3>
-        <div class="result-canvas-wrap">
-          <canvas id="result-canvas" aria-label="Captured photo"></canvas>
-          <img id="result-gif-preview" class="hidden" alt="Animated capture preview" />
+        <div class="result-review-grid">
+          <section class="result-shots hidden" id="result-shots" aria-label="Photos in capture order">
+            <h3>Photos in order</h3>
+            <div class="result-shot-list" id="result-shot-list" role="list"></div>
+          </section>
+          <section class="result-final" aria-label="Finished photo output">
+            <h3 class="result-output-label hidden" id="result-output-label">Finished photo strip</h3>
+            <div class="result-canvas-wrap">
+              <canvas id="result-canvas" aria-label="Captured photo"></canvas>
+              <img id="result-gif-preview" class="hidden" alt="Animated capture preview" />
+            </div>
+          </section>
         </div>
         <div class="result-actions">
           <button class="btn-primary" data-action="download-photo" data-format="png">⬇️ PNG</button>
