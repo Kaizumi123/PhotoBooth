@@ -2462,6 +2462,85 @@ body.gallery-viewer-open { overflow: hidden; }
   .result-shot-list { gap: 0.5rem; }
 }
 
+/* Device fit: keep the booth camera first and controls easy to tap on phones. */
+@media (max-width: 768px) {
+  body { overflow-x: clip; }
+  #main-nav {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+  .booth-section {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+  .booth-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    gap: 0.85rem;
+    width: 100%;
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) 1.25rem max(0.75rem, env(safe-area-inset-left));
+  }
+  .booth-center { order: 0; width: 100%; min-width: 0; gap: 0.75rem; }
+  .left-panel { order: 1; }
+  .right-panel { order: 2; }
+  .booth-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+  }
+  .panel-section { min-width: 0; padding: 0.85rem; }
+  .panel-title { font-size: 0.68rem; }
+  .booth-center::before { align-self: flex-start; margin-left: 0.2rem; }
+  .shot-sequence { width: 100%; }
+  .camera-wrap { width: 100%; max-width: 760px; margin-inline: auto; aspect-ratio: 4 / 3; }
+  .capture-controls { width: min(100%, 540px); max-width: 540px; min-height: 84px; margin-inline: auto; gap: clamp(0.75rem, 5vw, 1.2rem); }
+  .filter-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
+  .filter-btn { min-width: 0; min-height: 44px; gap: 0.4rem; padding: 0.35rem; font-size: 0.72rem; }
+  .filter-preview { width: 30px; height: 24px; }
+  .mode-btn, .cd-btn, .frame-btn, .effect-btn, .sequence-clear { min-height: 44px; }
+  .bg-btn { min-height: 44px; aspect-ratio: auto; }
+  .mode-btn, .cd-btn, .frame-btn, .effect-btn, .sequence-clear, .icon-btn, .face-focus-toggle { touch-action: manipulation; }
+  .result-panel { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+  .result-inner { max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem); overflow-y: auto; }
+  .help-assistant { right: max(0.75rem, env(safe-area-inset-right)); bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .assistant-panel {
+    height: min(520px, calc(100vh - 6rem));
+    height: min(520px, calc(100dvh - 6rem));
+    min-height: min(370px, calc(100vh - 6rem));
+    min-height: min(370px, calc(100dvh - 6rem));
+  }
+  .styled-input, .styled-select, .assistant-form input { font-size: 16px; }
+}
+
+/* Give smaller laptops a wide camera and a full-width row for secondary controls. */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .booth-layout { grid-template-columns: minmax(170px, 205px) minmax(0, 1fr); align-items: start; }
+  .booth-layout .right-panel {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* Keep the camera usable when a phone is turned sideways. */
+@media (max-width: 768px) and (orientation: landscape) and (max-height: 520px) {
+  .booth-section { padding-top: calc(var(--nav-h) + 0.25rem); }
+  .booth-layout { gap: 0.55rem; }
+  .camera-wrap { width: min(100%, 69.33vh); width: min(100%, 69.33dvh); height: auto; aspect-ratio: 4 / 3; }
+  .shot-sequence { padding: 0.5rem 0.65rem; }
+  .shot-sequence .strip-preview { min-height: 62px; }
+  .shot-sequence-item { flex-basis: 76px; height: 56px; }
+}
+
 /* Full-size, keyboard-friendly photo sequence viewer. */
 .sequence-viewer {
   position: fixed;
