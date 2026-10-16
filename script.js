@@ -628,8 +628,6 @@ function drawFocusSensor(ctx, landmarks, width, height) {
   const right = target.right * width;
   const top = target.top * height;
   const bottom = target.bottom * height;
-  const centerX = target.point.x * width;
-  const centerY = target.point.y * height;
   const corner = Math.min((right - left) * 0.2, (bottom - top) * 0.2);
 
   ctx.save();
@@ -643,13 +641,6 @@ function drawFocusSensor(ctx, landmarks, width, height) {
   ctx.moveTo(right - corner, top); ctx.lineTo(right, top); ctx.lineTo(right, top + corner);
   ctx.moveTo(right, bottom - corner); ctx.lineTo(right, bottom); ctx.lineTo(right - corner, bottom);
   ctx.moveTo(left + corner, bottom); ctx.lineTo(left, bottom); ctx.lineTo(left, bottom - corner);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, Math.max(8, width * 0.018), 0, Math.PI * 2);
-  ctx.moveTo(centerX - width * 0.028, centerY);
-  ctx.lineTo(centerX + width * 0.028, centerY);
-  ctx.moveTo(centerX, centerY - width * 0.028);
-  ctx.lineTo(centerX, centerY + width * 0.028);
   ctx.stroke();
   ctx.restore();
   return target;
