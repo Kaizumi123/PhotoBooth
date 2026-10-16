@@ -754,7 +754,7 @@ async function toggleFaceFocus() {
 function addPhotoFrame(photo) {
   const { width, height } = photo;
   const ctx = photo.getContext('2d');
-  const colors = { hearts: '#f472b6', stars: '#fbbf24', floral: '#86efac' };
+  const colors = { hearts: '#f472b6', stars: '#fbbf24', floral: '#86efac', gold: '#d4af37' };
   if (State.frame === 'polaroid') {
     const pad = Math.round(width * 0.035);
     const bottom = Math.round(height * 0.16);
@@ -767,6 +767,49 @@ function addPhotoFrame(photo) {
     frameCtx.drawImage(photo, pad, pad);
     return framed;
   }
+  if (State.frame === 'film') {
+    const band = Math.max(18, Math.round(height * 0.055));
+    ctx.fillStyle = 'rgba(20, 18, 22, 0.94)';
+    ctx.fillRect(0, 0, width, band);
+    ctx.fillRect(0, height - band, width, band);
+    const holeWidth = Math.max(12, Math.round(width * 0.025));
+    const holeHeight = Math.max(8, Math.round(band * 0.42));
+    const spacing = Math.max(holeWidth * 2.1, Math.round(width * 0.07));
+    ctx.fillStyle = '#f8e7b0';
+    for (let x = Math.round(spacing / 2); x < width - holeWidth; x += spacing) {
+      ctx.fillRect(x, Math.round((band - holeHeight) / 2), holeWidth, holeHeight);
+      ctx.fillRect(x, height - band + Math.round((band - holeHeight) / 2), holeWidth, holeHeight);
+    }
+    return photo;
+  }
+  if (State.frame === 'rainbow') {
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    ['#ff4d6d', '#ff9f1c', '#ffe66d', '#54d68c', '#38bdf8', '#8b5cf6'].forEach((color, index, list) => {
+      gradient.addColorStop(index / (list.length - 1), color);
+    });
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = Math.max(12, Math.round(width * 0.022));
+    ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, width - ctx.lineWidth, height - ctx.lineWidth);
+    return photo;
+  }
+  if (State.frame === 'confetti') {
+    const palette = ['#ff4d6d', '#ffb703', '#38bdf8', '#a78bfa', '#4ade80'];
+    const size = Math.max(8, Math.round(width * 0.012));
+    const positions = [
+      [0.08,0.07],[0.2,0.04],[0.34,0.08],[0.52,0.045],[0.7,0.075],[0.86,0.04],[0.94,0.11],
+      [0.06,0.3],[0.94,0.35],[0.04,0.58],[0.96,0.63],[0.1,0.9],[0.24,0.95],[0.42,0.91],
+      [0.6,0.96],[0.78,0.91],[0.9,0.96],[0.97,0.83]
+    ];
+    positions.forEach(([x, y], index) => {
+      ctx.save();
+      ctx.translate(width * x, height * y);
+      ctx.rotate((index % 2 ? 1 : -1) * 0.45);
+      ctx.fillStyle = palette[index % palette.length];
+      ctx.fillRect(-size / 2, -size / 2, size * (index % 3 === 0 ? 1.4 : 0.8), size * 0.8);
+      ctx.restore();
+    });
+    return photo;
+  }
   if (colors[State.frame]) {
     ctx.strokeStyle = colors[State.frame];
     ctx.lineWidth = Math.max(8, Math.round(width * 0.012));
@@ -774,7 +817,7 @@ function addPhotoFrame(photo) {
     ctx.font = `${Math.round(height * 0.055)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const symbol = State.frame === 'hearts' ? '\u2764\ufe0f' : State.frame === 'stars' ? '\u2b50' : '\u{1F338}';
+    const symbol = State.frame === 'hearts' ? '\u2764\ufe0f' : State.frame === 'stars' ? '\u2b50' : State.frame === 'gold' ? '\u2728' : '\u{1F338}';
     [[0.07,0.08],[0.93,0.08],[0.07,0.92],[0.93,0.92]].forEach(([x,y]) => ctx.fillText(symbol, width*x, height*y));
   }
   return photo;
@@ -1377,7 +1420,7 @@ function bindPhotoEffects() {
 }
 
 function applyFrameVisual(frame) {
-  cameraWrap.classList.remove('frame-polaroid','frame-hearts','frame-stars','frame-floral');
+  cameraWrap.classList.remove('frame-polaroid','frame-hearts','frame-stars','frame-floral','frame-rainbow','frame-film','frame-confetti','frame-gold');
   if (frame !== 'none') cameraWrap.classList.add('frame-' + frame);
 }
 
