@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Learn about SnapBooth, a playful camera studio for capturing and keeping moments in your browser." />
+  <meta name="theme-color" content="#111018" />
+  <meta name="color-scheme" content="dark light" />
+  <meta property="og:title" content="About SnapBooth" />
+  <meta property="og:description" content="A little photo studio, ready whenever a good moment happens." />
+  <title>About SnapBooth</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20261014.9" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Pacifico&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20261017.47" />
+</head>
+<body class="about-page">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div id="preloader" aria-label="Loading SnapBooth" role="status">
+  <div class="preloader-inner"><div class="preloader-logo" aria-hidden="true">&#128248;</div><div class="preloader-text">SnapBooth</div><div class="preloader-bar"><div class="preloader-fill"></div></div></div>
+</div>
+<nav id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="./index.html" class="nav-logo studio-brand" aria-label="Photobooth home"><span class="studio-brand-name">Photobooth</span><time class="studio-brand-date" id="studio-current-date"></time></a>
+    <ul class="nav-links" role="list">
+      <li><a href="./index.html" class="nav-link">Home</a></li>
+      <li><a href="./studio.html" class="nav-link">Studio</a></li>
+      <li><a href="./gallery.html" class="nav-link">Gallery</a></li>
+      <li><a href="./about.html" class="nav-link active" aria-current="page">About</a></li>
+    </ul>
+    <div class="nav-actions"><button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">&#127769;</button><a class="nav-cta" href="./studio.html">Open studio</a></div>
+    <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">&#9776;</button>
+  </div>
+  <div class="nav-mobile-menu" id="nav-mobile-menu" aria-hidden="true">
+    <a href="./index.html" class="mob-link">Home</a><a href="./studio.html" class="mob-link">Studio</a><a href="./gallery.html" class="mob-link">Gallery</a><a href="./about.html" class="mob-link" aria-current="page">About</a>
+  </div>
+</nav>
+
+<main id="main-content" class="about-main" tabindex="-1">
+  <section class="about-hero" aria-labelledby="about-title">
+    <div class="about-hero-copy">
+      <p class="about-kicker">FROM COIN-SLOT MACHINES TO DIGITAL PORTRAITS</p>
+      <h1 id="about-title">A century<br /><span>in a strip.</span></h1>
+      <p class="about-lede">A look back at the machines, photo strips, and shared traditions that made the photobooth a part of everyday life.</p>
+    </div>
+    <div class="about-camera-art" aria-hidden="true"><div class="about-photo-card"><div class="about-photo-art"><span>&#10022;</span><i></i><b></b></div><div class="about-photo-caption">A MOMENT TO KEEP</div></div><span class="about-spark about-spark-one">&#10022;</span><span class="about-spark about-spark-two">&#10024;</span><span class="about-stamp">SMILE<br />TOGETHER</span></div>
+  </section>
+
+  <section class="about-history" aria-labelledby="about-history-title">
+    <header class="about-history-heading"><p class="about-kicker">A LITTLE PHOTOBOOTH HISTORY</p><h2 id="about-history-title">A century of stepping in and striking a pose.</h2><p>Photo booths made portrait photography spontaneous and personal. Their format changed over time, but the fun of making a picture together stayed.</p></header>
+    <ol class="about-timeline">
+      <li><span class="about-timeline-year">1889</span><div><h3>An early photo machine</h3><p>French inventor T. E. Enjalbert presented an early photography machine at the Paris World's Fair. It was a forerunner to the self-service booths that came later.</p></div></li>
+      <li><span class="about-timeline-year">1925</span><div><h3>The Photomaton arrives</h3><p>Anatol Josepho's modern photo booth opened near Times Square. Customers could make a series of portraits by themselves, without a photographer.</p></div></li>
+      <li><span class="about-timeline-year">1950s–60s</span><div><h3>A familiar place to pose</h3><p>Booths became a common sight at fairs, shopping centers, and train stations. Friends, couples, and families made small photo strips to keep and share.</p></div></li>
+      <li><span class="about-timeline-year">Today</span><div><h3>A classic idea, in new forms</h3><p>Digital cameras and phones brought photo effects and instant sharing into the experience. Vintage booths are still loved, while new digital versions carry the tradition forward.</p></div></li>
+    </ol>
+    <p class="about-history-sources">History sources: <a href="https://www.getty.edu/news/photo-booths-history/" target="_blank" rel="noopener noreferrer">Getty Museum</a> and <a href="https://thephotographersgallery.org.uk/" target="_blank" rel="noopener noreferrer">The Photographers’ Gallery</a>.</p>
+  </section>
+
+  <section class="feedback-section" aria-labelledby="feedback-title">
+    <div class="feedback-card">
+      <div class="feedback-copy">
+        <p class="about-kicker">HELP US MAKE IT BETTER</p>
+        <h2 id="feedback-title">How was your booth moment?</h2>
+        <p>Share a suggestion, report a problem, or tell us what you enjoyed. Your note goes to the SnapBooth site owner through Netlify Forms.</p>
+      </div>
+      <form class="feedback-form" name="photobooth-feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="photobooth-feedback" />
+        <p class="feedback-honeypot" aria-hidden="true"><label>Leave this empty: <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
+        <label for="feedback-name">Name <span>(optional)</span></label>
+        <input id="feedback-name" name="name" type="text" maxlength="80" autocomplete="name" placeholder="What should we call you?" />
+        <label for="feedback-rating">Your experience</label>
+        <select id="feedback-rating" name="rating" required>
+          <option value="" selected disabled>Choose a rating</option>
+          <option value="Loved it">Loved it</option>
+          <option value="It was good">It was good</option>
+          <option value="Needs improvement">Needs improvement</option>
+        </select>
+        <label for="feedback-message">Your feedback</label>
+        <textarea id="feedback-message" name="message" rows="5" minlength="5" maxlength="2000" required placeholder="Tell us about your SnapBooth experience…"></textarea>
+        <button class="btn-primary feedback-submit" type="submit">Send feedback <span aria-hidden="true">&#8594;</span></button>
+        <p class="feedback-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="site.js?v=20261017.28"></script>
+</body>
+</html>

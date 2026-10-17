@@ -54,10 +54,14 @@ const State = {
   soundEnabled: true,
   lightMode: false,
   fullscreen: false,
+  fullscreenFallback: false,
 
   // Gallery
   gallery: [],
+  deletedGallery: [],
   currentPhoto: null,
+  editorBasePhoto: null,
+  editorOptions: { filter: 'none', theme: 'none', frame: 'none', emoji: '', date: false },
   galleryStorage: 'indexeddb',
 
   // Delete
@@ -87,6 +91,9 @@ const resultShots = $('result-shots');
 const resultShotList = $('result-shot-list');
 const resultOutputLabel = $('result-output-label');
 const countdown    = $('countdown-display');
+const captureProgress = $('capture-progress');
+const captureProgressLabel = $('capture-progress-label');
+const captureProgressFill = $('capture-progress-fill');
 const flashEl      = $('flash-overlay');
 const cameraLoading= $('camera-loading');
 const cameraError  = $('camera-error');
@@ -110,6 +117,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   buildStickers();
   const library = await loadPhotoLibrary();
   State.gallery = library.photos;
+  State.deletedGallery = library.deletedPhotos || [];
   State.galleryStorage = library.storage;
   loadPreferences();
   bindNavLinks();
@@ -236,7 +244,7 @@ function buildStickers() {
 }
 
 async function persistGallery() {
-  const result = await savePhotoLibrary(State.gallery, State.galleryStorage);
+  const result = await savePhotoLibrary(State.gallery, State.galleryStorage, State.deletedGallery);
   State.galleryStorage = result.storage;
   if (!result.ok) showToast('Photo storage is full. Download your photos before saving more.', 'error');
   return result.ok;
@@ -288,6 +296,8 @@ function startCapture() {
   const captureId = ++State.captureId;
   captureBtn.disabled = true;
   State.stripCaptures = [];
+  captureProgress?.classList.toggle('hidden', !['strip2', 'strip4'].includes(State.mode));
+  if (captureProgressFill) captureProgressFill.style.width = '0%';
 
   (async () => {
     try {
@@ -297,11 +307,16 @@ function startCapture() {
       }
       const count = State.mode === 'strip2' ? 2 : State.mode === 'strip4' ? 4 : 1;
       for (let index = 0; index < count; index++) {
+        if (count > 1 && captureProgressLabel) captureProgressLabel.textContent = `Photo ${index + 1} of ${count} · Get ready`;
         await runCaptureCountdown();
         if (!State.capturing || captureId !== State.captureId) return;
         const shot = createPhotoCanvas();
         State.stripCaptures.push(shot);
         addStripThumbnail(shot);
+        if (count > 1) {
+          if (captureProgressFill) captureProgressFill.style.width = `${((index + 1) / count) * 100}%`;
+          if (captureProgressLabel) captureProgressLabel.textContent = `Photo ${index + 1} of ${count} captured`;
+        }
         if (index < count - 1) {
           showToast(`Photo ${index + 1} of ${count} captured. Get ready for the next one.`);
           await wait(700);
@@ -313,6 +328,7 @@ function startCapture() {
       resultCanvas.height = output.height;
       resultCanvas.getContext('2d').drawImage(output, 0, 0);
       State.currentPhoto = resultCanvas.toDataURL('image/png');
+      setupPhotoEditor(State.currentPhoto);
       renderResultShots(State.stripCaptures);
       $('result-gif-preview').classList.add('hidden');
       $('result-gif-preview').removeAttribute('src');
@@ -322,6 +338,8 @@ function startCapture() {
         if (button.id !== 'download-gif-btn') button.classList.remove('hidden');
       });
       $('result-title').textContent = count === 1 ? 'Looking great!' : `${count} moments, one keepsake.`;
+      const retakeButton = document.querySelector('.result-actions [data-action="retake"]');
+      if (retakeButton) retakeButton.textContent = count > 1 ? '🔁 Retake strip' : '🔁 Retake photo';
       showResultPanel();
     } catch (err) {
       if (captureId === State.captureId) {
@@ -331,6 +349,7 @@ function startCapture() {
     } finally {
       if (captureId === State.captureId) {
         countdown.classList.remove('visible');
+        captureProgress?.classList.add('hidden');
         State.capturing = false;
         captureBtn.disabled = false;
         State.captureTimer = null;
@@ -346,6 +365,8 @@ async function captureAnimatedSequence(captureId) {
   State.gifFrames = [];
   const frameCount = 8;
   for (let index = 0; index < frameCount; index++) {
+    if (!State.capturing || captureId !== State.captureId) return;
+    await waitForCameraFrame();
     if (!State.capturing || captureId !== State.captureId) return;
     const shot = createPhotoCanvas(false);
     const width = Math.min(360, shot.width);
@@ -374,6 +395,8 @@ async function captureAnimatedSequence(captureId) {
   document.querySelectorAll('.result-actions [data-action="download-photo"]').forEach(button => button.classList.add('hidden'));
   $('download-gif-btn').classList.remove('hidden');
   State.currentPhoto = gifData;
+  State.editorBasePhoto = null;
+  $('photo-editor').classList.add('hidden');
   $('result-title').textContent = State.mode === 'boomerang' ? 'A moment that comes back around.' : 'Your little moment, in motion.';
   renderResultShots([]);
   addStripThumbnail(State.gifFrames[0]);
@@ -382,6 +405,7 @@ async function captureAnimatedSequence(captureId) {
 
 function showResultPanel() {
   State.modalReturnFocus = captureBtn;
+  resultInner.classList.toggle('with-photo-editor', !$('photo-editor').classList.contains('hidden'));
   resultPanel.classList.remove('hidden');
   const cameraRect = cameraWrap.getBoundingClientRect();
   const resultRect = resultInner.getBoundingClientRect();
@@ -395,6 +419,100 @@ function showResultPanel() {
   void resultInner.offsetWidth;
   resultInner.classList.add('photo-printing');
   $('result-title').focus({ preventScroll: true });
+}
+
+function setupPhotoEditor(basePhoto) {
+  State.editorBasePhoto = basePhoto;
+  State.editorOptions = { filter: 'none', theme: 'none', frame: 'none', emoji: '', date: false };
+  $('output-date').checked = false;
+  const hasCapturedPhoto = State.stripCaptures.length > 0;
+  $('output-strip-group').classList.toggle('hidden', !hasCapturedPhoto);
+  syncPhotoEditorButtons();
+  $('photo-editor').classList.remove('hidden');
+}
+
+function syncPhotoEditorButtons() {
+  document.querySelectorAll('.editor-option[data-editor-group]').forEach(button => {
+    const active = State.editorOptions[button.dataset.editorGroup] === button.dataset.editorValue;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  document.querySelectorAll('.editor-strip-layout').forEach(button => {
+    const active = State.stripLayout === button.dataset.editorStripLayout;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+
+async function renderPhotoEditor() {
+  if (!State.editorBasePhoto) return;
+  const source = new Image();
+  source.src = State.editorBasePhoto;
+  try { await source.decode(); } catch (error) {
+    console.warn('Could not open the photo editor image:', error);
+    showToast('Could not apply edits to this photo.', 'error');
+    return;
+  }
+  const options = State.editorOptions;
+  const width = source.naturalWidth;
+  const height = source.naturalHeight;
+  resultCanvas.width = width;
+  resultCanvas.height = height;
+  const ctx = resultCanvas.getContext('2d');
+  ctx.save();
+  const filters = {
+    none: 'none', warm: 'sepia(0.24) saturate(1.18)', bw: 'grayscale(1)',
+    vintage: 'sepia(0.48) contrast(1.08) saturate(0.82)', dreamy: 'brightness(1.08) saturate(0.82)'
+  };
+  ctx.filter = filters[options.filter] || 'none';
+  ctx.drawImage(source, 0, 0, width, height);
+  ctx.restore();
+
+  const themes = {
+    pink: ['rgba(246,114,182,0.16)', 'rgba(255,219,231,0.06)'],
+    lavender: ['rgba(167,139,250,0.2)', 'rgba(194,181,255,0.05)'],
+    celebrate: ['rgba(255,193,92,0.14)', 'rgba(245,103,126,0.1)']
+  };
+  if (themes[options.theme]) {
+    const [top, bottom] = themes[options.theme];
+    const tint = ctx.createLinearGradient(0, 0, width, height);
+    tint.addColorStop(0, top);
+    tint.addColorStop(1, bottom);
+    ctx.fillStyle = tint;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  const frameColors = { white: '#fffaf5', pink: '#f08bb5', gold: '#d8b365' };
+  if (frameColors[options.frame]) {
+    const inset = Math.max(6, Math.round(Math.min(width, height) * 0.018));
+    ctx.strokeStyle = frameColors[options.frame];
+    ctx.lineWidth = Math.max(5, Math.round(Math.min(width, height) * 0.012));
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+  }
+
+  if (options.emoji) {
+    ctx.save();
+    ctx.font = `${Math.round(Math.min(width, height) * 0.13)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = Math.max(4, width * 0.012);
+    ctx.fillText(options.emoji, width * 0.94, height * 0.035);
+    ctx.restore();
+  }
+
+  if (options.date) {
+    const bandHeight = Math.max(36, Math.round(height * 0.075));
+    ctx.fillStyle = 'rgba(24,19,25,0.62)';
+    ctx.fillRect(0, height - bandHeight, width, bandHeight);
+    ctx.fillStyle = '#fffaf5';
+    ctx.font = `600 ${Math.max(14, Math.round(width * 0.027))}px sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date()), width - Math.round(width * 0.035), height - bandHeight / 2);
+  }
+
+  State.currentPhoto = resultCanvas.toDataURL('image/png');
 }
 
 function closeResultPanel() {
@@ -502,7 +620,9 @@ function encodeGifLzw(indices) {
     emit(prefix);
     if (nextCode < 4096) {
       dictionary.set(key, nextCode++);
-      if (nextCode === (1 << codeSize) && codeSize < 12) codeSize++;
+      // The decoder adds this dictionary entry one output code later, so keep
+      // the current width for that next code and grow only after crossing it.
+      if (nextCode > (1 << codeSize) && codeSize < 12) codeSize++;
     } else {
       emit(clearCode);
       dictionary = new Map();
@@ -515,6 +635,13 @@ function encodeGifLzw(indices) {
   emit(endCode);
   if (bitCount > 0) output.push(bitBuffer & 255);
   return Uint8Array.from(output);
+}
+
+function waitForCameraFrame() {
+  if (typeof video.requestVideoFrameCallback === 'function') {
+    return new Promise(resolve => video.requestVideoFrameCallback(() => resolve()));
+  }
+  return new Promise(resolve => requestAnimationFrame(() => resolve()));
 }
 
 function wait(ms) {
@@ -800,6 +927,71 @@ async function toggleFaceFocus() {
 function addPhotoFrame(photo) {
   const { width, height } = photo;
   const ctx = photo.getContext('2d');
+  if (State.frame === 'editorial') {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.96)';
+    ctx.lineWidth = Math.max(3, Math.round(width * 0.004));
+    ctx.strokeRect(width * 0.018, height * 0.024, width * 0.964, height * 0.952);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = Math.max(1, Math.round(width * 0.0015));
+    ctx.strokeRect(width * 0.026, height * 0.034, width * 0.948, height * 0.932);
+    ctx.restore();
+    return photo;
+  }
+  if (State.frame === 'glam') {
+    const inset = Math.max(10, Math.round(width * 0.018));
+    ctx.save();
+    ctx.strokeStyle = '#f1d89a';
+    ctx.lineWidth = Math.max(4, Math.round(width * 0.006));
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+    ctx.strokeStyle = 'rgba(255,239,196,0.72)';
+    ctx.lineWidth = Math.max(1, Math.round(width * 0.0015));
+    ctx.strokeRect(inset * 1.7, inset * 1.7, width - inset * 3.4, height - inset * 3.4);
+    ctx.fillStyle = '#fff0c7';
+    ctx.font = `${Math.max(18, Math.round(width * 0.025))}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    [[inset * 1.7, inset * 1.7], [width - inset * 1.7, inset * 1.7], [inset * 1.7, height - inset * 1.7], [width - inset * 1.7, height - inset * 1.7]].forEach(([x, y]) => ctx.fillText('✦', x, y));
+    ctx.restore();
+    return photo;
+  }
+  if (State.frame === 'botanical') {
+    const inset = Math.max(10, Math.round(width * 0.018));
+    ctx.save();
+    ctx.strokeStyle = 'rgba(237,244,220,0.94)';
+    ctx.lineWidth = Math.max(3, Math.round(width * 0.004));
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+    ctx.strokeStyle = 'rgba(237,244,220,0.48)';
+    ctx.lineWidth = Math.max(1, Math.round(width * 0.0015));
+    ctx.strokeRect(inset * 1.65, inset * 1.65, width - inset * 3.3, height - inset * 3.3);
+    ctx.fillStyle = '#e4efcf';
+    ctx.font = `${Math.max(20, Math.round(width * 0.032))}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    [['❧', inset * 2, inset * 2], ['❧', width - inset * 2, height - inset * 2]].forEach(([mark, x, y]) => ctx.fillText(mark, x, y));
+    ctx.restore();
+    return photo;
+  }
+  if (State.frame === 'celebration') {
+    const palette = ['#ffe6c1', '#f2b5b5', '#f4d17e', '#d6b8ed'];
+    const inset = Math.max(9, Math.round(width * 0.016));
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,238,211,0.95)';
+    ctx.lineWidth = Math.max(3, Math.round(width * 0.004));
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+    ctx.strokeStyle = 'rgba(255,238,211,0.58)';
+    ctx.lineWidth = Math.max(1, Math.round(width * 0.0015));
+    ctx.strokeRect(inset * 2, inset * 2, width - inset * 4, height - inset * 4);
+    const size = Math.max(4, Math.round(width * 0.006));
+    [[0.07,0.08],[0.17,0.045],[0.83,0.05],[0.93,0.1],[0.06,0.88],[0.18,0.95],[0.82,0.95],[0.94,0.87]].forEach(([x, y], index) => {
+      ctx.fillStyle = palette[index % palette.length];
+      ctx.beginPath();
+      ctx.arc(width * x, height * y, size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+    return photo;
+  }
   const colors = { hearts: '#f472b6', stars: '#fbbf24', floral: '#86efac', gold: '#d4af37' };
   if (State.frame === 'polaroid') {
     const pad = Math.round(width * 0.035);
@@ -968,9 +1160,12 @@ function closeSequenceViewer() {
 
 function createPhotoStrip(photos) {
   if (!photos.length) throw new Error('A photo strip needs at least one photo.');
-  const largestDimension = Math.max(...photos.map(photo => Math.max(photo.width, photo.height)));
+  // If the user edits a single portrait into a strip, repeat it three times
+  // so every strip style still looks like a complete photobooth keepsake.
+  const stripPhotos = photos.length === 1 ? [photos[0], photos[0], photos[0]] : photos;
+  const largestDimension = Math.max(...stripPhotos.map(photo => Math.max(photo.width, photo.height)));
   const scale = Math.min(1, 1200 / largestDimension);
-  const items = photos.map(photo => ({
+  const items = stripPhotos.map(photo => ({
     photo,
     width: Math.max(1, Math.round(photo.width * scale)),
     height: Math.max(1, Math.round(photo.height * scale)),
@@ -979,7 +1174,19 @@ function createPhotoStrip(photos) {
   const maxHeight = Math.max(...items.map(item => item.height));
   const gap = Math.max(18, Math.round(Math.min(maxWidth, maxHeight) * 0.03));
   const margin = Math.max(28, Math.round(Math.min(maxWidth, maxHeight) * 0.045));
+  const framePadding = Math.max(18, Math.round(Math.min(maxWidth, maxHeight) * 0.035));
   const layout = STRIP_LAYOUTS.includes(State.stripLayout) ? State.stripLayout : 'classic';
+  const photoDate = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date());
+  const verse = '“The Lord bless you and keep you.” — Numbers 6:24';
+
+  function drawVerseAndDate(context, x, y, width, captionHeight) {
+    context.fillStyle = '#78686a';
+    context.textAlign = 'center';
+    context.font = `italic 600 ${Math.max(10, Math.min(20, Math.round(width * 0.025)))}px Georgia, serif`;
+    context.fillText(verse, x + width / 2, y + captionHeight * 0.43, width - 16);
+    context.font = `500 ${Math.max(9, Math.min(16, Math.round(width * 0.019)))}px sans-serif`;
+    context.fillText(photoDate, x + width / 2, y + captionHeight * 0.78, width - 16);
+  }
 
   function makeCanvas(width, height, background) {
     const canvas = document.createElement('canvas');
@@ -1016,13 +1223,19 @@ function createPhotoStrip(photos) {
   }
 
   if (layout === 'horizontal') {
-    const width = items.reduce((sum, item) => sum + item.width, 0) + gap * (items.length - 1) + margin * 2;
-    const height = maxHeight + margin * 2;
-    const { canvas, context } = makeCanvas(width, height, '#fffafc');
+    const captionHeight = Math.max(28, Math.round(maxHeight * 0.07));
+    const cardWidths = items.map(item => item.width + framePadding * 2);
+    const cardHeight = maxHeight + framePadding * 2 + captionHeight;
+    const width = cardWidths.reduce((sum, cardWidth) => sum + cardWidth, 0) + gap * (items.length - 1) + margin * 2;
+    const height = cardHeight + margin * 2;
+    const { canvas, context } = makeCanvas(width, height, '#eadbd4');
     let x = margin;
-    items.forEach(item => {
-      drawContained(context, item, x, margin, item.width, maxHeight);
-      x += item.width + gap;
+    items.forEach((item, index) => {
+      context.fillStyle = '#fffdf9';
+      context.fillRect(x, margin, cardWidths[index], cardHeight);
+      drawContained(context, item, x + framePadding, margin + framePadding, item.width, maxHeight);
+      drawVerseAndDate(context, x, margin + framePadding + maxHeight, cardWidths[index], captionHeight);
+      x += cardWidths[index] + gap;
     });
     return canvas;
   }
@@ -1031,24 +1244,25 @@ function createPhotoStrip(photos) {
     const cell = Math.max(maxWidth, maxHeight);
     const columns = 2;
     const rows = Math.ceil(items.length / columns);
-    const width = margin * 2 + cell * columns + gap * (columns - 1);
-    const height = margin * 2 + cell * rows + gap * (rows - 1);
+    const framedCell = cell + framePadding * 2;
+    const width = margin * 2 + framedCell * columns + gap * (columns - 1);
+    const height = margin * 2 + framedCell * rows + gap * (rows - 1);
     const { canvas, context } = makeCanvas(width, height, '#f2e7e1');
     items.forEach((item, index) => {
-      const x = margin + (index % columns) * (cell + gap);
-      const y = margin + Math.floor(index / columns) * (cell + gap);
+      const cardX = margin + (index % columns) * (framedCell + gap);
+      const cardY = margin + Math.floor(index / columns) * (framedCell + gap);
       context.fillStyle = '#fffafc';
-      context.fillRect(x - 8, y - 8, cell + 16, cell + 16);
-      drawCropped(context, item, x, y, cell, cell);
+      context.fillRect(cardX, cardY, framedCell, framedCell);
+      drawCropped(context, item, cardX + framePadding, cardY + framePadding, cell, cell);
     });
     return canvas;
   }
 
   if (layout === 'film') {
     const rail = 42;
-    const imageWidth = maxWidth;
+    const imageWidth = maxWidth + framePadding * 2;
     const width = margin * 2 + imageWidth + rail * 2;
-    const height = margin * 2 + items.reduce((sum, item) => sum + item.height, 0) + gap * (items.length - 1);
+    const height = margin * 2 + items.reduce((sum, item) => sum + item.height + framePadding * 2, 0) + gap * (items.length - 1);
     const { canvas, context } = makeCanvas(width, height, '#26232b');
     const startY = margin;
     for (let y = startY; y < height - margin; y += 54) {
@@ -1058,15 +1272,17 @@ function createPhotoStrip(photos) {
     }
     let y = startY;
     items.forEach(item => {
-      drawContained(context, item, margin + rail, y, imageWidth, item.height);
-      y += item.height + gap;
+      context.fillStyle = '#fffdf9';
+      context.fillRect(margin + rail, y, imageWidth, item.height + framePadding * 2);
+      drawContained(context, item, margin + rail + framePadding, y + framePadding, maxWidth, item.height);
+      y += item.height + framePadding * 2 + gap;
     });
     return canvas;
   }
 
   if (layout === 'polaroid') {
     const padding = Math.max(32, Math.round(Math.min(maxWidth, maxHeight) * 0.045));
-    const captionHeight = 92;
+    const captionHeight = Math.max(74, Math.round(maxWidth * 0.12));
     const cardWidth = maxWidth + padding * 2;
     const cardHeight = maxHeight + padding + captionHeight;
     const width = cardWidth + margin * 2;
@@ -1084,21 +1300,24 @@ function createPhotoStrip(photos) {
       context.shadowBlur = 0;
       context.shadowOffsetY = 0;
       drawContained(context, item, x + padding, y + padding, maxWidth, maxHeight);
-      context.fillStyle = '#78686a';
-      context.font = '700 22px sans-serif';
-      context.textAlign = 'center';
-      context.fillText(`SNAPBOOTH  •  ${String(index + 1).padStart(2, '0')}`, x + cardWidth / 2, y + padding + maxHeight + 58);
+      drawVerseAndDate(context, x, y + padding + maxHeight, cardWidth, captionHeight);
     });
     return canvas;
   }
 
-  const width = maxWidth + margin * 2;
-  const height = items.reduce((sum, item) => sum + item.height, 0) + gap * (items.length - 1) + margin * 2;
-  const { canvas, context } = makeCanvas(width, height, '#fffafc');
+  const captionHeight = Math.max(28, Math.round(maxHeight * 0.07));
+  const cardWidth = maxWidth + framePadding * 2;
+  const cardHeight = maxHeight + framePadding * 2 + captionHeight;
+  const width = cardWidth + margin * 2;
+  const height = cardHeight * items.length + gap * (items.length - 1) + margin * 2;
+  const { canvas, context } = makeCanvas(width, height, '#eadbd4');
   let y = margin;
-  items.forEach(item => {
-    drawContained(context, item, margin, y, maxWidth, item.height);
-    y += item.height + gap;
+  items.forEach((item, index) => {
+    context.fillStyle = '#fffdf9';
+    context.fillRect(margin, y, cardWidth, cardHeight);
+    drawContained(context, item, margin + framePadding, y + framePadding, maxWidth, maxHeight);
+    drawVerseAndDate(context, margin, y + framePadding + maxHeight, cardWidth, captionHeight);
+    y += cardHeight + gap;
   });
   return canvas;
 }
@@ -1110,12 +1329,16 @@ function retake() {
   State.captureTimer = null;
   State.captureResolve = null;
   countdown.classList.remove('visible');
+  captureProgress?.classList.add('hidden');
   resultPanel.classList.add('hidden');
   $('result-gif-preview').classList.add('hidden');
   $('result-gif-preview').removeAttribute('src');
   $('download-gif-btn').classList.add('hidden');
   resultCanvas.classList.remove('hidden');
   State.currentPhoto = null;
+  State.editorBasePhoto = null;
+  const retakeButton = document.querySelector('.result-actions [data-action="retake"]');
+  if (retakeButton) retakeButton.textContent = State.mode === 'strip2' || State.mode === 'strip4' ? '🔁 Retake strip' : '🔁 Retake photo';
   State.stripCaptures = [];
   State.capturing = false;
   captureBtn.disabled = false;
@@ -1124,22 +1347,55 @@ function retake() {
 }
 
 async function toggleFullscreen() {
+  const booth = $('booth');
   try {
-    if (document.fullscreenElement) {
+    if (document.fullscreenElement || State.fullscreenFallback) {
+      if (State.fullscreenFallback && !document.fullscreenElement) {
+        setFullscreenFallback(false);
+        return;
+      }
       await document.exitFullscreen();
-    } else if ($('booth').requestFullscreen) {
-      await $('booth').requestFullscreen();
+    } else if (booth.requestFullscreen) {
+      await booth.requestFullscreen();
     } else {
-      showToast('Fullscreen is not supported by this browser.', 'error');
+      setFullscreenFallback(true);
+      showToast('Studio expanded to fill the screen. Tap the fullscreen button again to close it.', 'info');
     }
-  } catch (_) {
-    showToast('Could not enter fullscreen. Check your browser permissions.', 'error');
+  } catch (error) {
+    if (!State.fullscreen && !document.fullscreenElement) {
+      setFullscreenFallback(true);
+      showToast('Studio expanded to fill the screen. Tap the fullscreen button again to close it.', 'info');
+    } else {
+      console.warn('Could not change fullscreen mode:', error);
+      showToast('Could not change fullscreen mode.', 'error');
+    }
   }
+}
+
+function setFullscreenFallback(enabled) {
+  State.fullscreenFallback = enabled;
+  State.fullscreen = enabled;
+  $('booth').classList.toggle('booth-fullscreen', enabled);
+  $('booth').classList.toggle('booth-fullscreen-fallback', enabled);
+  document.body.classList.toggle('studio-fullscreen-fallback', enabled);
+  syncFullscreenButton();
+}
+
+function syncFullscreenButton() {
+  const button = $('fullscreen-btn');
+  const fullscreenActive = State.fullscreen || Boolean(document.fullscreenElement);
+  button.setAttribute('aria-pressed', String(fullscreenActive));
+  button.setAttribute('aria-label', fullscreenActive ? 'Exit fullscreen' : 'Enter fullscreen');
+  button.title = fullscreenActive ? 'Exit fullscreen' : 'Enter fullscreen';
 }
 
 document.addEventListener('fullscreenchange', () => {
   State.fullscreen = document.fullscreenElement === $('booth');
+  if (document.fullscreenElement) State.fullscreenFallback = false;
+  $('booth').classList.remove('booth-fullscreen-fallback');
+  document.body.classList.remove('studio-fullscreen-fallback');
   $('booth').classList.toggle('booth-fullscreen', State.fullscreen);
+  syncFullscreenButton();
 });
 
 function downloadPhoto(format) {
@@ -1202,6 +1458,43 @@ function bindNavLinks() {
 }
 
 function bindActions() {
+  document.querySelectorAll('.editor-option[data-editor-group]').forEach(button => {
+    button.addEventListener('click', () => {
+      State.editorOptions[button.dataset.editorGroup] = button.dataset.editorValue;
+      syncPhotoEditorButtons();
+      renderPhotoEditor();
+    });
+  });
+  document.querySelectorAll('.editor-strip-layout').forEach(button => {
+    button.addEventListener('click', () => {
+      const layout = button.dataset.editorStripLayout;
+      if (!STRIP_LAYOUTS.includes(layout) || State.stripCaptures.length < 1) return;
+      State.stripLayout = layout;
+      document.querySelectorAll('.strip-layout-btn').forEach(option => {
+        const active = option.dataset.stripLayout === layout;
+        option.classList.toggle('active', active);
+        option.setAttribute('aria-pressed', String(active));
+      });
+      savePreferences();
+      const output = createPhotoStrip(State.stripCaptures);
+      resultCanvas.width = output.width;
+      resultCanvas.height = output.height;
+      resultCanvas.getContext('2d').drawImage(output, 0, 0);
+      State.editorBasePhoto = resultCanvas.toDataURL('image/png');
+      State.currentPhoto = State.editorBasePhoto;
+      syncPhotoEditorButtons();
+      renderPhotoEditor();
+    });
+  });
+  $('output-date').addEventListener('change', () => {
+    State.editorOptions.date = $('output-date').checked;
+    renderPhotoEditor();
+  });
+  $('reset-photo-editor').addEventListener('click', () => {
+    setupPhotoEditor(State.editorBasePhoto);
+    renderPhotoEditor();
+  });
+
   document.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
     const control = target?.closest('[data-action]');
@@ -1724,7 +2017,7 @@ function bindPhotoEffects() {
 }
 
 function applyFrameVisual(frame) {
-  cameraWrap.classList.remove('frame-polaroid','frame-hearts','frame-stars','frame-floral','frame-rainbow','frame-film','frame-confetti','frame-gold');
+  cameraWrap.classList.remove('frame-polaroid','frame-editorial','frame-film','frame-glam','frame-botanical','frame-celebration');
   if (frame !== 'none') cameraWrap.classList.add('frame-' + frame);
 }
 
@@ -1779,6 +2072,7 @@ function bindKeyboard() {
       if (onboardingOpen) closeOnboarding();
       else if (sequenceViewerOpen) closeSequenceViewer();
       else if (resultOpen) closeResultPanel();
+      else if (State.fullscreenFallback) setFullscreenFallback(false);
       return;
     }
 
@@ -1809,7 +2103,13 @@ function bindKeyboard() {
     if (activeModal) return;
 
     const target = e.target instanceof Element ? e.target : null;
-    if (target?.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
+    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.code === 'KeyF' && State.boothVisible) {
+      e.preventDefault();
+      toggleFullscreen();
+      return;
+    }
+    if (target?.closest('button, a')) return;
     if (!State.boothVisible) return;
 
     switch (e.code) {
@@ -1818,10 +2118,6 @@ function bindKeyboard() {
         break;
       case 'KeyR':
         if (resultOpen) { e.preventDefault(); retake(); }
-        break;
-      case 'KeyF':
-        e.preventDefault();
-        toggleFullscreen();
         break;
       case 'ArrowLeft':
         e.preventDefault();

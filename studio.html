@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Pacifico&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261017.25" />
+  <link rel="stylesheet" href="style.css?v=20261017.59" />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -34,20 +34,19 @@
       <li><a href="./index.html" class="nav-link">Home</a></li>
       <li><a href="#booth" class="nav-link active" data-section="booth" data-action="open-booth">Studio</a></li>
       <li><a href="./gallery.html" class="nav-link">Gallery</a></li>
-      <li><a href="#about" class="nav-link" data-section="about">About</a></li>
+      <li><a href="./about.html" class="nav-link">About</a></li>
     </ul>
     <div class="nav-actions">
       <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">🌙</button>
       <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">🔊</button>
-      <button class="nav-cta" data-action="open-booth" aria-label="Open photobooth">Start booth</button>
     </div>
-    <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">☰</button>
+    <button class="nav-burger" id="nav-burger" aria-label="Open menu" aria-expanded="false">&#9776;</button>
   </div>
   <div class="nav-mobile-menu" id="nav-mobile-menu" aria-hidden="true">
-    <a href="./index.html" class="mob-link">🏠 Home</a>
-    <a href="#booth" class="mob-link" data-action="open-booth">📸 Studio</a>
-    <a href="./gallery.html" class="mob-link">🖼️ Gallery</a>
-    <a href="#about" class="mob-link">ℹ️ About</a>
+    <a href="./index.html" class="mob-link">Home</a>
+    <a href="#booth" class="mob-link" data-action="open-booth">Studio</a>
+    <a href="./gallery.html" class="mob-link">Gallery</a>
+    <a href="./about.html" class="mob-link">About</a>
   </div>
 </nav>
 
@@ -136,14 +135,6 @@
       </aside>
 
       <div class="booth-center" aria-label="Camera view">
-        <section class="shot-sequence" id="shot-sequence" aria-label="Photo sequence">
-          <div class="shot-sequence-header">
-            <div><h2>Photo sequence</h2><p id="shot-sequence-count" role="status" aria-live="polite">0 photos</p><span class="sequence-viewer-hint">Tap a photo to browse</span></div>
-            <button class="sequence-clear" id="clear-shot-history" type="button" data-action="clear-shot-history" disabled>Clear</button>
-          </div>
-          <p class="sequence-empty" id="shot-sequence-empty">Your photos will appear here in order.</p>
-          <div class="strip-preview" id="strip-preview" aria-label="Captured photos in order" aria-live="polite" role="list"></div>
-        </section>
         <div class="camera-wrap" id="camera-wrap" role="region" aria-label="Camera preview">
           <div class="camera-loading" id="camera-loading" aria-live="polite"><div class="spinner" aria-hidden="true"></div><p id="camera-loading-message">Starting camera…</p></div>
           <video id="video" autoplay playsinline muted aria-label="Camera preview"></video>
@@ -156,18 +147,30 @@
           <div class="face-focus-status hidden" id="face-focus-status" role="status" aria-live="polite">Loading face focus…</div>
           <div class="sticker-layer" id="sticker-layer" aria-label="Stickers"></div>
           <div class="countdown-display" id="countdown-display" aria-live="assertive" aria-atomic="true"></div>
+          <div class="capture-progress hidden" id="capture-progress" role="status" aria-live="polite">
+            <span class="capture-progress-label" id="capture-progress-label">Photo 1 of 4</span>
+            <span class="capture-progress-track" aria-hidden="true"><span id="capture-progress-fill"></span></span>
+          </div>
+          <div class="camera-utility-controls" aria-label="Camera options">
+            <button class="icon-btn camera-fullscreen-btn" id="fullscreen-btn" data-action="fullscreen" aria-label="Enter fullscreen" aria-pressed="false" title="Enter fullscreen">⛶</button>
+            <button class="capture-btn" id="capture-btn" data-action="capture" aria-label="Take photo" title="Capture (Space)"><span class="capture-ring"></span><span class="capture-dot"></span></button>
+            <button class="icon-btn camera-toggle-btn" id="camera-toggle-btn" type="button" data-action="toggle-camera" aria-label="Turn camera on" aria-pressed="false" title="Turn camera on">
+              <svg class="camera-toggle-icon camera-toggle-on-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13.5" r="3.5"/></svg>
+              <svg class="camera-toggle-icon camera-toggle-off-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13.5" r="3.5"/><path d="m3 3 18 18"/></svg>
+            </button>
+          </div>
           <div class="flash-overlay" id="flash-overlay" aria-hidden="true"></div>
           <div class="theme-overlay" id="theme-overlay" aria-hidden="true"></div>
         </div>
-        <div class="capture-controls" aria-label="Capture controls">
-          <button class="icon-btn" id="fullscreen-btn" data-action="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen (F)">⛶</button>
-          <button class="capture-btn" id="capture-btn" data-action="capture" aria-label="Take photo" title="Capture (Space)"><span class="capture-ring"></span><span class="capture-dot"></span></button>
-          <button class="icon-btn camera-toggle-btn" id="camera-toggle-btn" type="button" data-action="toggle-camera" aria-label="Turn camera on" aria-pressed="false" title="Turn camera on">
-            <svg class="camera-toggle-icon camera-toggle-on-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13.5" r="3.5"/></svg>
-            <svg class="camera-toggle-icon camera-toggle-off-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0 1 21.5 9v9a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13.5" r="3.5"/><path d="m3 3 18 18"/></svg>
-          </button>
-        </div>
-        <div class="keyboard-hints" aria-hidden="true"><span>Space = Capture</span><span>R = Retake</span><span>F = Fullscreen</span><span>← → = Filter</span></div>
+        <section class="shot-sequence" id="shot-sequence" aria-label="Photo sequence">
+          <div class="shot-sequence-header">
+            <div><h2>Photo sequence</h2><p id="shot-sequence-count" role="status" aria-live="polite">0 photos</p><span class="sequence-viewer-hint">Tap a photo to browse</span></div>
+            <button class="sequence-clear" id="clear-shot-history" type="button" data-action="clear-shot-history" disabled>Clear</button>
+          </div>
+          <p class="sequence-empty" id="shot-sequence-empty">Your photos will appear here in order.</p>
+          <div class="strip-preview" id="strip-preview" aria-label="Captured photos in order" aria-live="polite" role="list"></div>
+        </section>
+        <div class="keyboard-hints" aria-hidden="true"><span>Space = Capture</span><span>R = Retake</span><span>F or click ⛶ = Fullscreen</span><span>← → = Filter</span></div>
       </div>
 
       <aside class="booth-sidebar right-panel" aria-label="Filters and stickers">
@@ -187,15 +190,13 @@
         <div class="panel-section">
           <h3 class="panel-title">🖼 Frames</h3>
           <div class="frame-list" id="frame-list" role="group" aria-label="Photo frames">
-            <button class="frame-btn active" data-frame="none" aria-pressed="true">None</button>
-            <button class="frame-btn" data-frame="rainbow" aria-pressed="false">Rainbow</button>
-            <button class="frame-btn" data-frame="film" aria-pressed="false">Film strip</button>
-            <button class="frame-btn" data-frame="confetti" aria-pressed="false">Confetti</button>
-            <button class="frame-btn" data-frame="gold" aria-pressed="false">Gold</button>
-            <button class="frame-btn" data-frame="polaroid" aria-pressed="false">Polaroid</button>
-            <button class="frame-btn" data-frame="hearts" aria-pressed="false">Hearts ❤️</button>
-            <button class="frame-btn" data-frame="stars" aria-pressed="false">Stars ⭐</button>
-            <button class="frame-btn" data-frame="floral" aria-pressed="false">Floral 🌸</button>
+            <button class="frame-btn active" data-frame="none" aria-pressed="true"><span class="frame-swatch frame-swatch-none" aria-hidden="true"></span><span>Clean</span></button>
+            <button class="frame-btn" data-frame="editorial" aria-pressed="false"><span class="frame-swatch frame-swatch-editorial" aria-hidden="true"></span><span>Editorial</span></button>
+            <button class="frame-btn" data-frame="film" aria-pressed="false"><span class="frame-swatch frame-swatch-film" aria-hidden="true"></span><span>35mm Film</span></button>
+            <button class="frame-btn" data-frame="polaroid" aria-pressed="false"><span class="frame-swatch frame-swatch-polaroid" aria-hidden="true"></span><span>Instant</span></button>
+            <button class="frame-btn" data-frame="glam" aria-pressed="false"><span class="frame-swatch frame-swatch-glam" aria-hidden="true"></span><span>Glam</span></button>
+            <button class="frame-btn" data-frame="botanical" aria-pressed="false"><span class="frame-swatch frame-swatch-botanical" aria-hidden="true"></span><span>Botanical</span></button>
+            <button class="frame-btn" data-frame="celebration" aria-pressed="false"><span class="frame-swatch frame-swatch-celebration" aria-hidden="true"></span><span>Party</span></button>
           </div>
         </div>
         <div class="panel-section">
@@ -237,13 +238,57 @@
             </div>
           </section>
         </div>
+        <section class="photo-editor" id="photo-editor" aria-label="Edit your photo">
+          <header class="photo-editor-header">
+            <div><p class="photo-editor-eyebrow">MAKE IT YOURS</p><h3>Edit your photo</h3></div>
+            <button type="button" class="editor-reset" id="reset-photo-editor">Reset</button>
+          </header>
+          <div class="photo-editor-controls">
+            <fieldset class="editor-group"><legend>Filters</legend><div class="editor-option-row">
+              <button type="button" class="editor-option active" data-editor-group="filter" data-editor-value="none" aria-pressed="true"><i class="editor-swatch swatch-original"></i><span>Original</span></button>
+              <button type="button" class="editor-option" data-editor-group="filter" data-editor-value="warm" aria-pressed="false"><i class="editor-swatch swatch-warm"></i><span>Warm</span></button>
+              <button type="button" class="editor-option" data-editor-group="filter" data-editor-value="bw" aria-pressed="false"><i class="editor-swatch swatch-bw"></i><span>B&amp;W</span></button>
+              <button type="button" class="editor-option" data-editor-group="filter" data-editor-value="vintage" aria-pressed="false"><i class="editor-swatch swatch-vintage"></i><span>Vintage</span></button>
+              <button type="button" class="editor-option" data-editor-group="filter" data-editor-value="dreamy" aria-pressed="false"><i class="editor-swatch swatch-dreamy"></i><span>Dreamy</span></button>
+            </div></fieldset>
+            <fieldset class="editor-group"><legend>Theme</legend><div class="editor-option-row editor-theme-options">
+              <button type="button" class="editor-option active" data-editor-group="theme" data-editor-value="none" aria-pressed="true"><i class="editor-swatch swatch-original"></i><span>None</span></button>
+              <button type="button" class="editor-option" data-editor-group="theme" data-editor-value="pink" aria-pressed="false"><i class="editor-swatch swatch-pink"></i><span>Pink</span></button>
+              <button type="button" class="editor-option" data-editor-group="theme" data-editor-value="lavender" aria-pressed="false"><i class="editor-swatch swatch-lavender"></i><span>Lavender</span></button>
+              <button type="button" class="editor-option" data-editor-group="theme" data-editor-value="celebrate" aria-pressed="false"><i class="editor-swatch swatch-celebrate"></i><span>Party</span></button>
+            </div></fieldset>
+            <fieldset class="editor-group"><legend>Frame</legend><div class="editor-option-row editor-frame-options">
+              <button type="button" class="editor-option active" data-editor-group="frame" data-editor-value="none" aria-pressed="true"><i class="editor-swatch swatch-original"></i><span>None</span></button>
+              <button type="button" class="editor-option" data-editor-group="frame" data-editor-value="white" aria-pressed="false"><i class="editor-swatch swatch-white"></i><span>Classic</span></button>
+              <button type="button" class="editor-option" data-editor-group="frame" data-editor-value="pink" aria-pressed="false"><i class="editor-swatch swatch-pink"></i><span>Pink</span></button>
+              <button type="button" class="editor-option" data-editor-group="frame" data-editor-value="gold" aria-pressed="false"><i class="editor-swatch swatch-gold"></i><span>Gold</span></button>
+            </div></fieldset>
+            <fieldset class="editor-group output-strip-group hidden" id="output-strip-group"><legend>Strip layout</legend><div class="editor-strip-layouts" role="group" aria-label="Choose the finished photo strip layout">
+              <button type="button" class="editor-option editor-strip-layout" data-editor-strip-layout="classic" aria-pressed="true"><span class="strip-layout-preview strip-layout-preview-classic" aria-hidden="true"><i></i><i></i><i></i></span><span>Classic</span></button>
+              <button type="button" class="editor-option editor-strip-layout" data-editor-strip-layout="horizontal" aria-pressed="false"><span class="strip-layout-preview strip-layout-preview-horizontal" aria-hidden="true"><i></i><i></i><i></i></span><span>Horizontal</span></button>
+              <button type="button" class="editor-option editor-strip-layout" data-editor-strip-layout="grid" aria-pressed="false"><span class="strip-layout-preview strip-layout-preview-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Grid</span></button>
+              <button type="button" class="editor-option editor-strip-layout" data-editor-strip-layout="film" aria-pressed="false"><span class="strip-layout-preview strip-layout-preview-film" aria-hidden="true"><i></i><i></i><i></i></span><span>Film</span></button>
+              <button type="button" class="editor-option editor-strip-layout" data-editor-strip-layout="polaroid" aria-pressed="false"><span class="strip-layout-preview strip-layout-preview-polaroid" aria-hidden="true"><i></i><i></i></span><span>Polaroid</span></button>
+            </div></fieldset>
+            <fieldset class="editor-group"><legend>Stickers</legend><div class="editor-option-row editor-sticker-options">
+              <button type="button" class="editor-option editor-emoji active" data-editor-group="emoji" data-editor-value="" aria-label="No sticker" aria-pressed="true">&#8722;</button>
+              <button type="button" class="editor-option editor-emoji" data-editor-group="emoji" data-editor-value="&#10024;" aria-label="Sparkle sticker" aria-pressed="false">&#10024;</button>
+              <button type="button" class="editor-option editor-emoji" data-editor-group="emoji" data-editor-value="&#128150;" aria-label="Heart sticker" aria-pressed="false">&#128150;</button>
+              <button type="button" class="editor-option editor-emoji" data-editor-group="emoji" data-editor-value="&#128526;" aria-label="Cool sticker" aria-pressed="false">&#128526;</button>
+              <button type="button" class="editor-option editor-emoji" data-editor-group="emoji" data-editor-value="&#127874;" aria-label="Party sticker" aria-pressed="false">&#127874;</button>
+              <button type="button" class="editor-option editor-emoji" data-editor-group="emoji" data-editor-value="&#127800;" aria-label="Flower sticker" aria-pressed="false">&#127800;</button>
+              <button type="button" class="editor-option editor-emoji" data-editor-group="emoji" data-editor-value="&#11088;" aria-label="Star sticker" aria-pressed="false">&#11088;</button>
+            </div></fieldset>
+            <label class="output-date-toggle"><input id="output-date" type="checkbox" /><span class="editor-switch" aria-hidden="true"></span><span><strong>Date stamp</strong><small>Add today’s date to the photo</small></span></label>
+          </div>
+        </section>
         <div class="result-actions">
           <button class="btn-primary" data-action="download-photo" data-format="png">⬇️ PNG</button>
           <button class="btn-primary" data-action="download-photo" data-format="jpg">⬇️ JPG</button>
           <button class="btn-primary hidden" id="download-gif-btn" data-action="download-photo" data-format="gif">⬇️ GIF</button>
           <button class="btn-secondary" data-action="save-photo">💾 Save</button>
           <button class="btn-secondary" data-action="share-photo">📤 Share</button>
-          <button class="btn-ghost" data-action="retake">🔁 Retake</button>
+          <button class="btn-ghost" data-action="retake">🔁 Retake photo</button>
         </div>
         <div class="confetti-container" id="confetti-container" aria-hidden="true"></div>
       </div>
@@ -260,31 +305,7 @@
       </div>
     </div>
   </section>
-
-  <section id="about" class="section about-section" aria-label="About SnapBooth">
-    <div class="about-inner">
-      <div class="about-content">
-        <h2>About SnapBooth</h2>
-        <p>SnapBooth turns your browser and camera into a little photo studio. Choose a look, gather your people, and make a keepsake together.</p>
-        <p>Your photos stay in this browser’s local library. Camera access requires a secure connection and permission from your browser.</p>
-        <div class="tech-pills" aria-label="Technologies used"><span>HTML</span><span>CSS</span><span>JavaScript</span><span>Canvas</span><span>Camera API</span><span>IndexedDB</span><span>PWA</span></div>
-      </div>
-      <div class="about-img" aria-hidden="true">📸</div>
-    </div>
-  </section>
 </main>
-
-<footer class="site-footer" role="contentinfo" aria-label="Site footer">
-  <div class="footer-inner">
-    <div class="footer-brand"><div class="footer-logo">📸 SnapBooth</div><p>Premium photobooth experience in your browser.</p></div>
-    <div class="footer-links" aria-label="Footer links">
-      <h4>Quick Links</h4><a href="./index.html">Home</a><a href="#booth" data-action="open-booth">Studio</a><a href="./gallery.html">Gallery</a><a href="#about">About</a>
-    </div>
-    <div class="footer-note"><h4>Your photos, your device</h4><p>Saved locally in this browser. Download a copy whenever you like.</p></div>
-  </div>
-  <div class="footer-bottom"><p>© <span id="copyright-year">2026</span> SnapBooth · Made for good memories.</p></div>
-</footer>
-
 <div class="modal-backdrop hidden" id="onboarding-modal" role="dialog" aria-modal="true" aria-label="Welcome tutorial">
   <div class="modal-box">
     <button class="modal-close" data-action="close-onboarding" aria-label="Close tutorial">✕</button>
@@ -299,7 +320,7 @@
   </div>
 </div>
 
-<script type="module" src="site.js?v=20261016.21"></script>
-<script type="module" src="script.js?v=20261016.16"></script>
+<script type="module" src="site.js?v=20261017.28"></script>
+<script type="module" src="script.js?v=20261017.26"></script>
 </body>
 </html>

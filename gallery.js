@@ -3,34 +3,43 @@ import { loadPhotoLibrary, savePhotoLibrary } from './gallery-store.js';
 const $ = id => document.getElementById(id);
 const state = {
   photos: [],
+  deletedPhotos: [],
   storage: 'indexeddb',
+  view: 'gallery',
   filter: 'all',
   query: '',
   sort: 'newest',
   activeId: null,
   returnFocus: null,
   deleteId: null,
+  deletePermanent: false,
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
   const library = await loadPhotoLibrary();
   state.photos = library.photos;
+  state.deletedPhotos = library.deletedPhotos || [];
   state.storage = library.storage;
   loadThemePreference();
   bindControls();
   renderGallery();
-  $('copyright-year').textContent = String(new Date().getFullYear());
+  const copyrightYear = $('copyright-year');
+  if (copyrightYear) copyrightYear.textContent = String(new Date().getFullYear());
 });
 
-function orderedPhotos() {
+function currentPhotos() {
+  return state.view === 'trash' ? state.deletedPhotos : state.photos;
+}
+
+function orderedPhotos(source = currentPhotos()) {
   const direction = state.sort === 'oldest' ? 1 : -1;
-  return [...state.photos].sort((first, second) => (photoTimestamp(first) - photoTimestamp(second)) * direction);
+  return [...source].sort((first, second) => (photoTimestamp(first) - photoTimestamp(second)) * direction);
 }
 
 function visiblePhotos() {
   const query = state.query.trim().toLocaleLowerCase();
   return orderedPhotos().filter(photo => {
-    if (state.filter === 'favorites' && !photo.favorite) return false;
+    if (state.view === 'gallery' && state.filter === 'favorites' && !photo.favorite) return false;
     if (!query) return true;
     return `${photo.title || ''} ${photo.name || ''} ${formatPhotoDate(photo)}`.toLocaleLowerCase().includes(query);
   });
@@ -51,26 +60,36 @@ function formatPhotoDate(photo) {
 
 function renderGallery() {
   const photos = visiblePhotos();
+  const inTrash = state.view === 'trash';
   const grid = $('gallery-grid');
   const fragment = document.createDocumentFragment();
 
-  photos.forEach(photo => fragment.appendChild(createPhotoCard(photo)));
+  photos.forEach(photo => fragment.appendChild(createPhotoCard(photo, inTrash)));
   grid.replaceChildren(fragment);
 
   const total = state.photos.length;
   const favorites = state.photos.filter(photo => photo.favorite).length;
-  $('gallery-total-count').textContent = `${total} ${total === 1 ? 'photo' : 'photos'}`;
+  $('gallery-view-heading').classList.toggle('hidden', !inTrash);
+  $('gallery-total-count').textContent = inTrash
+    ? `${state.deletedPhotos.length} in Trash`
+    : `${total} ${total === 1 ? 'photo' : 'photos'}`;
   $('gallery-all-count').textContent = String(total);
   $('gallery-favorites-count').textContent = String(favorites);
-  $('gallery-empty').classList.toggle('hidden', total > 0);
-  $('gallery-no-results').classList.toggle('hidden', total === 0 || photos.length > 0);
+  $('gallery-trash-count').textContent = String(state.deletedPhotos.length);
+  $('gallery-empty').classList.toggle('hidden', inTrash || total > 0);
+  $('gallery-trash-empty').classList.toggle('hidden', !inTrash || state.deletedPhotos.length > 0);
+  $('gallery-no-results').classList.toggle('hidden', photos.length > 0 || (inTrash ? state.deletedPhotos.length === 0 : total === 0));
   grid.classList.toggle('hidden', photos.length === 0);
-  $('gallery-download-all').disabled = total === 0;
-  $('gallery-clear-all').disabled = total === 0;
-  $('gallery-all-filter').classList.toggle('active', state.filter === 'all');
-  $('gallery-favorites-filter').classList.toggle('active', state.filter === 'favorites');
-  $('gallery-all-filter').setAttribute('aria-pressed', String(state.filter === 'all'));
-  $('gallery-favorites-filter').setAttribute('aria-pressed', String(state.filter === 'favorites'));
+  $('gallery-download-all').disabled = photos.length === 0;
+  $('gallery-clear-all').disabled = (inTrash ? state.deletedPhotos.length : total) === 0;
+  $('gallery-clear-all').textContent = inTrash ? 'Empty Trash' : 'Move all to Trash';
+  $('gallery-clear-all').setAttribute('aria-label', inTrash ? 'Permanently delete all photos in Trash' : 'Move all photos to Trash');
+  $('gallery-all-filter').classList.toggle('active', !inTrash && state.filter === 'all');
+  $('gallery-favorites-filter').classList.toggle('active', !inTrash && state.filter === 'favorites');
+  $('gallery-trash-filter').classList.toggle('active', inTrash);
+  $('gallery-all-filter').setAttribute('aria-pressed', String(!inTrash && state.filter === 'all'));
+  $('gallery-favorites-filter').setAttribute('aria-pressed', String(!inTrash && state.filter === 'favorites'));
+  $('gallery-trash-filter').setAttribute('aria-pressed', String(inTrash));
   $('gallery-empty-results-title').textContent = state.filter === 'favorites' && !state.query
     ? 'No favorites yet' : 'No matching photos';
   $('gallery-empty-results-copy').textContent = state.filter === 'favorites' && !state.query
@@ -78,9 +97,9 @@ function renderGallery() {
   if (state.activeId) renderViewer();
 }
 
-function createPhotoCard(photo) {
+function createPhotoCard(photo, isDeleted = false) {
   const item = document.createElement('article');
-  item.className = 'gallery-item';
+  item.className = `gallery-item${isDeleted ? ' is-deleted' : ''}`;
   item.setAttribute('role', 'listitem');
 
   const preview = document.createElement('button');
@@ -104,17 +123,24 @@ function createPhotoCard(photo) {
   title.textContent = photo.title || 'SnapBooth moment';
   const date = document.createElement('time');
   date.className = 'gallery-item-date';
-  date.dateTime = photoTimestamp(photo) ? new Date(photoTimestamp(photo)).toISOString() : '';
-  date.textContent = formatPhotoDate(photo);
+  const displayedTimestamp = isDeleted && Number.isFinite(photo.deletedAt) ? photo.deletedAt : photoTimestamp(photo);
+  date.dateTime = displayedTimestamp ? new Date(displayedTimestamp).toISOString() : '';
+  date.textContent = isDeleted && displayedTimestamp ? `Deleted ${formatPhotoDate({ createdAt: displayedTimestamp })}` : formatPhotoDate(photo);
 
   const actions = document.createElement('div');
   actions.className = 'gallery-item-actions';
-  const favorite = makeActionButton('gallery-favorite', photo.favorite ? '♥ Saved' : '♡ Favorite', 'toggle-favorite', photo.id);
-  favorite.setAttribute('aria-pressed', String(photo.favorite));
-  favorite.classList.toggle('is-favorite', photo.favorite);
-  const download = makeActionButton('btn-secondary', '↓ Download', 'gallery-download-photo', photo.id);
-  const remove = makeActionButton('btn-ghost', 'Delete', 'delete-photo', photo.id);
-  actions.append(favorite, download, remove);
+  const download = makeActionButton('btn-secondary', 'Download', 'gallery-download-photo', photo.id);
+  if (isDeleted) {
+    const restore = makeActionButton('btn-secondary', 'Restore', 'restore-photo', photo.id);
+    const removeForever = makeActionButton('btn-ghost', 'Delete forever', 'delete-photo', photo.id);
+    actions.append(restore, download, removeForever);
+  } else {
+    const favorite = makeActionButton('gallery-favorite', photo.favorite ? 'Saved' : 'Favorite', 'toggle-favorite', photo.id);
+    favorite.setAttribute('aria-pressed', String(photo.favorite));
+    favorite.classList.toggle('is-favorite', photo.favorite);
+    const remove = makeActionButton('btn-ghost', 'Delete', 'delete-photo', photo.id);
+    actions.append(favorite, download, remove);
+  }
   info.append(title, date, actions);
   item.append(preview, info);
   return item;
@@ -146,9 +172,15 @@ function bindControls() {
   });
   document.querySelectorAll('[data-gallery-filter]').forEach(button => {
     button.addEventListener('click', () => {
+      state.view = 'gallery';
       state.filter = button.dataset.galleryFilter;
       renderGallery();
     });
+  });
+  $('gallery-trash-filter').addEventListener('click', () => {
+    state.view = 'trash';
+    state.filter = 'all';
+    renderGallery();
   });
   document.addEventListener('click', handleAction);
   document.addEventListener('keydown', handleKeyboard);
@@ -164,6 +196,7 @@ function handleAction(event) {
     case 'import-photos': $('gallery-import-input').click(); break;
     case 'download-all': downloadAllPhotos(); break;
     case 'clear-gallery': clearGallery(); break;
+    case 'restore-photo': restorePhoto(id); break;
     case 'view-photo': openViewer(id, control); break;
     case 'toggle-favorite': toggleFavorite(id); break;
     case 'gallery-download-photo': downloadPhoto(id); break;
@@ -173,6 +206,7 @@ function handleAction(event) {
     case 'gallery-previous': stepViewer(-1); break;
     case 'gallery-next': stepViewer(1); break;
     case 'show-all-gallery':
+      state.view = 'gallery';
       state.filter = 'all';
       state.query = '';
       $('gallery-search').value = '';
@@ -184,7 +218,7 @@ function handleAction(event) {
 }
 
 async function persist() {
-  const result = await savePhotoLibrary(state.photos, state.storage);
+  const result = await savePhotoLibrary(state.photos, state.storage, state.deletedPhotos);
   state.storage = result.storage;
   if (!result.ok) showToast('Photo storage is full. Download your photos before saving more.', 'error');
   return result.ok;
@@ -264,7 +298,7 @@ function readFileAsDataUrl(file) {
 }
 
 function openViewer(id, trigger) {
-  if (!state.photos.some(photo => photo.id === id)) return;
+  if (!currentPhotos().some(photo => photo.id === id)) return;
   state.activeId = id;
   state.returnFocus = trigger;
   $('gallery-viewer').classList.remove('hidden');
@@ -274,17 +308,19 @@ function openViewer(id, trigger) {
 }
 
 function renderViewer() {
-  const photo = state.photos.find(item => item.id === state.activeId);
+  const photo = currentPhotos().find(item => item.id === state.activeId);
   if (!photo) return closeViewer();
-  const ordered = orderedPhotos();
+  const ordered = orderedPhotos(currentPhotos());
   const index = ordered.findIndex(item => item.id === photo.id);
   const image = $('gallery-viewer-image');
   image.src = photo.data;
   image.alt = photo.title || 'Saved photobooth photo';
   $('gallery-viewer-title').textContent = photo.title || 'SnapBooth moment';
-  $('gallery-viewer-date').textContent = formatPhotoDate(photo);
+  $('gallery-viewer-date').textContent = state.view === 'trash' && photo.deletedAt
+    ? `Deleted ${formatPhotoDate({ createdAt: photo.deletedAt })}` : formatPhotoDate(photo);
   $('gallery-viewer-count').textContent = `${index + 1} of ${ordered.length}`;
   const favorite = $('gallery-viewer-favorite');
+  favorite.classList.toggle('hidden', state.view === 'trash');
   favorite.dataset.photoId = photo.id;
   favorite.setAttribute('aria-pressed', String(photo.favorite));
   favorite.classList.toggle('is-favorite', photo.favorite);
@@ -292,6 +328,7 @@ function renderViewer() {
   ['gallery-viewer-download', 'gallery-viewer-share', 'gallery-viewer-delete'].forEach(id => {
     $(id).dataset.photoId = photo.id;
   });
+  $('gallery-viewer-delete').textContent = state.view === 'trash' ? 'Delete forever' : 'Delete';
   $('gallery-viewer-previous').disabled = ordered.length < 2;
   $('gallery-viewer-next').disabled = ordered.length < 2;
 }
@@ -327,6 +364,12 @@ function requestDelete(id, trigger) {
     state.returnFocus = trigger;
   }
   state.deleteId = id;
+  state.deletePermanent = state.view === 'trash';
+  $('delete-modal-title').textContent = state.deletePermanent ? 'Delete this photo forever?' : 'Move photo to Trash?';
+  $('delete-modal-message').textContent = state.deletePermanent
+    ? 'This photo will be permanently deleted and cannot be restored.'
+    : 'This photo will be moved to Trash, where you can restore it later.';
+  $('delete-modal').querySelector('[data-action="confirm-delete"]').textContent = state.deletePermanent ? 'Delete forever' : 'Move to Trash';
   $('delete-modal').classList.remove('hidden');
   $('delete-modal').querySelector('[data-action="close-delete"]').focus();
 }
@@ -334,43 +377,84 @@ function requestDelete(id, trigger) {
 function closeDelete() {
   $('delete-modal').classList.add('hidden');
   state.deleteId = null;
+  state.deletePermanent = false;
   if (state.returnFocus instanceof HTMLElement && state.returnFocus.isConnected) state.returnFocus.focus();
   else $('gallery-title').focus({ preventScroll: true });
 }
 
 async function deletePhoto() {
   if (!state.deleteId) return closeDelete();
-  const previous = state.photos;
-  state.photos = state.photos.filter(photo => photo.id !== state.deleteId);
+  const permanentlyDeleted = state.deletePermanent;
+  const previousPhotos = state.photos;
+  const previousDeletedPhotos = state.deletedPhotos;
+  if (state.deletePermanent) {
+    state.deletedPhotos = state.deletedPhotos.filter(photo => photo.id !== state.deleteId);
+  } else {
+    const photo = state.photos.find(item => item.id === state.deleteId);
+    if (!photo) return closeDelete();
+    state.photos = state.photos.filter(item => item.id !== state.deleteId);
+    state.deletedPhotos = [{ ...photo, deletedAt: Date.now() }, ...state.deletedPhotos];
+  }
   const success = await persist();
-  if (!success) state.photos = previous;
+  if (!success) {
+    state.photos = previousPhotos;
+    state.deletedPhotos = previousDeletedPhotos;
+  }
   else state.returnFocus = null;
   closeDelete();
   renderGallery();
   if (success) {
     const nextPhoto = $('gallery-grid').querySelector('.gallery-preview');
     (nextPhoto || $('gallery-title')).focus({ preventScroll: true });
-    showToast('Photo deleted.', 'success');
+    showToast(permanentlyDeleted ? 'Photo permanently deleted.' : 'Photo moved to Trash.', 'success');
   }
 }
 
 async function clearGallery() {
-  if (!state.photos.length || !window.confirm('Clear all saved photos from this device?')) return;
-  const previous = state.photos;
-  state.photos = [];
-  if (!await persist()) state.photos = previous;
-  else showToast('Gallery cleared.', 'success');
+  if (state.view === 'trash') {
+    if (!state.deletedPhotos.length || !window.confirm('Permanently delete all photos in Trash? This cannot be undone.')) return;
+    const previous = state.deletedPhotos;
+    state.deletedPhotos = [];
+    if (!await persist()) state.deletedPhotos = previous;
+    else showToast('Trash is empty.', 'success');
+  } else {
+    if (!state.photos.length || !window.confirm('Move all gallery photos to Trash? You can restore them later.')) return;
+    const previousPhotos = state.photos;
+    const previousDeletedPhotos = state.deletedPhotos;
+    state.deletedPhotos = [...state.photos.map(photo => ({ ...photo, deletedAt: Date.now() })), ...state.deletedPhotos];
+    state.photos = [];
+    if (!await persist()) {
+      state.photos = previousPhotos;
+      state.deletedPhotos = previousDeletedPhotos;
+    } else showToast('Photos moved to Trash.', 'success');
+  }
+  renderGallery();
+}
+
+async function restorePhoto(id) {
+  const photo = state.deletedPhotos.find(item => item.id === id);
+  if (!photo) return;
+  const previousPhotos = state.photos;
+  const previousDeletedPhotos = state.deletedPhotos;
+  const restored = { ...photo };
+  delete restored.deletedAt;
+  state.photos = [restored, ...state.photos];
+  state.deletedPhotos = state.deletedPhotos.filter(item => item.id !== id);
+  if (!await persist()) {
+    state.photos = previousPhotos;
+    state.deletedPhotos = previousDeletedPhotos;
+  } else showToast('Photo restored to your gallery.', 'success');
   renderGallery();
 }
 
 function downloadPhoto(id) {
-  const photo = state.photos.find(item => item.id === id);
+  const photo = [...state.photos, ...state.deletedPhotos].find(item => item.id === id);
   if (!photo) return;
   downloadData(photo.data, `snapbooth-${photo.id}.${fileExtension(photo.data)}`);
 }
 
 function downloadAllPhotos() {
-  orderedPhotos().forEach((photo, index) => {
+  orderedPhotos(currentPhotos()).forEach((photo, index) => {
     setTimeout(() => downloadData(photo.data, `snapbooth-${index + 1}.${fileExtension(photo.data)}`), index * 250);
   });
 }
@@ -387,7 +471,7 @@ function fileExtension(data) {
 }
 
 async function sharePhoto(id) {
-  const photo = state.photos.find(item => item.id === id);
+  const photo = [...state.photos, ...state.deletedPhotos].find(item => item.id === id);
   if (!photo) return;
   try {
     const blob = await (await fetch(photo.data)).blob();

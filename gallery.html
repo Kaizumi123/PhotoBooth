@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Pacifico&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20261017.25" />
+  <link rel="stylesheet" href="style.css?v=20261017.46" />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -34,7 +34,7 @@
       <li><a href="./index.html" class="nav-link">Home</a></li>
       <li><a href="./studio.html" class="nav-link">Studio</a></li>
       <li><a href="./gallery.html" class="nav-link active" aria-current="page">Gallery</a></li>
-      <li><a href="./index.html#features" class="nav-link">About</a></li>
+      <li><a href="./about.html" class="nav-link">About</a></li>
     </ul>
     <div class="nav-actions">
       <button id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">🌙</button>
@@ -46,7 +46,7 @@
     <a href="./index.html" class="mob-link">🏠 Home</a>
     <a href="./studio.html" class="mob-link">📸 Studio</a>
     <a href="./gallery.html" class="mob-link" aria-current="page">🖼️ Gallery</a>
-    <a href="./index.html#features" class="mob-link">ℹ️ About</a>
+    <a href="./about.html" class="mob-link">ℹ️ About</a>
   </div>
 </nav>
 
@@ -73,6 +73,7 @@
       <div class="gallery-filter-group" role="group" aria-label="Filter gallery">
         <button class="gallery-filter active" id="gallery-all-filter" data-gallery-filter="all" aria-pressed="true">All <span id="gallery-all-count">0</span></button>
         <button class="gallery-filter" id="gallery-favorites-filter" data-gallery-filter="favorites" aria-pressed="false">♡ Favorites <span id="gallery-favorites-count">0</span></button>
+        <button class="gallery-filter" id="gallery-trash-filter" data-gallery-view="trash" aria-pressed="false">Trash <span id="gallery-trash-count">0</span></button>
       </div>
       <label class="gallery-sort-wrap">Sort
         <select id="gallery-sort" class="styled-select" aria-label="Sort photos">
@@ -92,6 +93,11 @@
       </div>
     </div>
 
+    <div class="gallery-view-heading hidden" id="gallery-view-heading" aria-live="polite">
+      <h2 id="gallery-view-title">Trash</h2>
+      <p>Restore photos to your gallery or delete them permanently.</p>
+    </div>
+
     <div class="gallery-grid" id="gallery-grid" aria-label="Saved photos" role="list"></div>
     <div class="gallery-empty hidden" id="gallery-empty" aria-live="polite">
       <div class="gallery-empty-art" aria-hidden="true"><span>✦</span><span>♡</span><span>✧</span></div>
@@ -105,6 +111,12 @@
       <h2 id="gallery-empty-results-title">No matching photos</h2>
       <p id="gallery-empty-results-copy">Try another search or show all of your photos.</p>
       <button class="btn-secondary" data-action="show-all-gallery">Show all photos</button>
+    </div>
+    <div class="gallery-empty hidden" id="gallery-trash-empty" aria-live="polite">
+      <div class="gallery-empty-art" aria-hidden="true"><span>↶</span><span>♡</span><span>✧</span></div>
+      <p class="gallery-kicker">TRASH</p>
+      <h2>Your trash is empty</h2>
+      <p>Deleted photos appear here. Restore them to your gallery or remove them permanently.</p>
     </div>
   </section>
 </main>
@@ -138,39 +150,16 @@
 
 <div class="modal-backdrop hidden" id="delete-modal" role="dialog" aria-modal="true" aria-label="Confirm delete">
   <div class="modal-box small">
-    <h2>🗑 Delete photo?</h2>
-    <p>This photo will be permanently removed from your gallery.</p>
+    <h2 id="delete-modal-title">Move photo to Trash?</h2>
+    <p id="delete-modal-message">This photo will be moved to Trash, where you can restore it later.</p>
     <div class="modal-btns">
       <button class="btn-ghost" data-action="close-delete">Cancel</button>
-      <button class="btn-danger" data-action="confirm-delete">Delete</button>
+      <button class="btn-danger" data-action="confirm-delete">Move to Trash</button>
     </div>
   </div>
 </div>
 
-<footer class="site-footer" role="contentinfo" aria-label="Site footer">
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <div class="footer-logo">📸 SnapBooth</div>
-      <p>Premium photobooth experience in your browser.</p>
-    </div>
-    <div class="footer-links" aria-label="Footer links">
-      <h4>Quick Links</h4>
-      <a href="./index.html">Home</a>
-      <a href="./studio.html">Studio</a>
-      <a href="./gallery.html">Gallery</a>
-      <a href="./index.html#features">About</a>
-    </div>
-    <div class="footer-note">
-      <h4>Your photos, your device</h4>
-      <p>Saved locally in this browser. Download a copy whenever you like.</p>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <p>© <span id="copyright-year">2026</span> SnapBooth · Made for good memories.</p>
-  </div>
-</footer>
-
-<script type="module" src="site.js?v=20261016.21"></script>
-<script type="module" src="gallery.js?v=20261014.9"></script>
+<script type="module" src="site.js?v=20261016.26"></script>
+<script type="module" src="gallery.js?v=20261017.11"></script>
 </body>
 </html>

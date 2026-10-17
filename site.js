@@ -1,5 +1,39 @@
 /* Shared page shell: loading state, landing decoration, and offline cache. */
 window.addEventListener('DOMContentLoaded', () => {
+  const feedbackForm = document.querySelector('.feedback-form');
+  const feedbackStatus = document.querySelector('.feedback-status');
+  if (feedbackForm && feedbackStatus) {
+    feedbackForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const submitButton = feedbackForm.querySelector('[type="submit"]');
+      const buttonText = submitButton?.innerHTML;
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending…';
+      }
+      feedbackStatus.textContent = 'Sending your feedback…';
+      try {
+        const body = new URLSearchParams(new FormData(feedbackForm));
+        const response = await fetch(location.pathname, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString()
+        });
+        if (!response.ok) throw new Error(`Feedback submission failed (${response.status})`);
+        feedbackForm.reset();
+        feedbackStatus.textContent = 'Thank you! Your feedback was sent.';
+      } catch (error) {
+        console.error('Feedback could not be submitted:', error);
+        feedbackStatus.textContent = 'Sorry, feedback could not be sent. Please try again later.';
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML = buttonText || 'Send feedback';
+        }
+      }
+    });
+  }
+
   const landing = document.getElementById('landing');
   const navigation = document.getElementById('main-nav');
   const colorPicker = document.getElementById('landing-color');
@@ -138,7 +172,7 @@ window.addEventListener('DOMContentLoaded', () => {
       Promise.all(keys.filter(key => key.startsWith('snapbooth-')).map(key => caches.delete(key)))
     ).catch(error => console.warn('Could not clear the local SnapBooth cache:', error));
   } else if (location.protocol === 'https:') {
-    navigator.serviceWorker.register('./sw.js?v=20261017.30').catch(error => {
+    navigator.serviceWorker.register('./sw.js?v=20261017.70').catch(error => {
       console.warn('SnapBooth offline cache could not be updated:', error);
     });
   }

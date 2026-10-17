@@ -1,14 +1,16 @@
 /* SnapBooth service worker: keep the offline copy current. */
-const CACHE = 'snapbooth-v53';
+const CACHE = 'snapbooth-v97';
 const ASSETS = [
   './',
   './index.html',
+  './assets/landing-contact-sheet.png',
   './studio.html',
   './gallery.html',
-  './style.css?v=20261017.25',
-  './site.js?v=20261016.21',
-  './script.js?v=20261016.16',
-  './gallery.js?v=20261014.9',
+  './about.html',
+  './style.css?v=20261017.59',
+  './site.js?v=20261017.28',
+  './script.js?v=20261017.26',
+  './gallery.js?v=20261017.11',
   './gallery-store.js',
   './manifest.json',
   './favicon.svg?v=20261014.9',
